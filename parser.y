@@ -33,13 +33,49 @@
 	    {
 	         count++;
 			 child = va_arg(list, Node*);
-	         if(child==0)
+	         if(child == 0)
 	         {    
 				   break;
 	         }
 	         par->addChild(child);    
 	     }
 	     va_end(list);
+	}
+	bool returnError(Node*p,bool isInt)//有语法错误返回true
+	{
+		//如果这个节点不为空且为return、
+		if(p && p->key == "Return statement")
+		{
+			if(isInt)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if(p && p->key == "Return expr statement")
+		{
+			if(isInt)
+			{
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		}
+		bool res = false;
+		for(int i = 0; i < p->children.size(); i++)
+		{
+			res = res || returnError(p->children[i], isInt);
+		}
+		if(!isInt)
+		{
+			return res;
+		}
+		return true;
 	}
 %}
 
@@ -69,8 +105,30 @@
 %nonassoc RETURN
 %%
  /* 开始符号 */
-s : 	INT MAIN LP RP CompoundK {$$=$5;print($$, 2);}
-	|	VOID MAIN LP RP CompoundK {$$=$5;print($$, 2);}
+s : 	INT MAIN LP RP CompoundK 
+		{
+			$$=$5;
+			if(!returnError($$,true))
+			{
+				print($$, 2);
+			}
+			else
+			{
+				cout<<"return error : need a return statement or expr after return"<<endl;
+			}
+		}
+	|	VOID MAIN LP RP CompoundK 
+		{
+			$$=$5;
+			if(!returnError($$,false))
+			{
+				print($$, 2);
+			}
+			else
+			{
+				cout<<"return error : unexpected expr after return"<<endl;
+			}
+		}
 	;
 
  /* 大括号包起来的部分*/
