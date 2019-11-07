@@ -1,102 +1,8 @@
 %{
 	#include"tree.h"
+	#include"parser.h"
 	extern int yylex();
 	int yyerror(const char* msg);
-	/*新建一个节点，并且将从下方传递来的节点加入其子结点*/
-	void print(Node* p, int interval)
-	{
-		for(int i=0;i<interval;i++)
-		{
-			if(i<interval-2)
-			{
-				cout<<"| ";
-			}
-			else if(i==interval-2)
-			{
-				cout<<"|___>";
-			}
-			
-		}
-		cout<<p->key<<endl;
-		for(int i=0;i<p->children.size();i++)
-		{
-			print(p->children[i], interval+1);
-		}
-	}
-	void insertChildren(Node*par, ...)
-	{
-	    va_list list;
-	    va_start(list,par);
-	    Node *child;
-		int count=0;
-	    while(1)
-	    {
-	         count++;
-			 child = va_arg(list, Node*);
-	         if(child==0)
-	         {    
-				   break;
-	         }
-	         par->addChild(child);    
-	     }
-	     va_end(list);
-	}
-	bool returnError(Node*p, Node*root, bool isInt)//有语法错误返回true
-	{
-		//如果这个节点不为空且为return、
-		if(p && p->key == "Return statement")
-		{
-			if(isInt)
-			{
-				cout<<"return error : need a return statement or expr after return at line "<<p->line<<" col "<<p->col<<endl;
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if(p && p->key == "Return expr statement")
-		{
-			if(isInt)
-			{
-				return false;
-			}
-			else
-			{
-				cout<<"return error : unexpected expr after return at line "<<p->line<<" col "<<p->col<<endl;
-				return true;
-			}
-		}
-		bool res = false;
-		for(int i = 0; i < p->children.size(); i++)
-		{
-			int subres = returnError(p->children[i], root, isInt);
-			res = res || subres;
-		}
-		//void返回递归得到的res,默认为没有语法错误
-		if(!isInt)
-		{
-			return res;
-		}
-		else if(isInt && p == root)//在最外层的递归调用
-		{
-			bool resroot = true;//默认有语法错误
-			for(int i = 0; i < p->children.size(); i++)
-			{
-				if(p->children[i]->key == "Return expr statement" || p->children[i]->key == "Return statement")
-				{
-					resroot = false;//有return语句就没有这个语法错误
-				}
-			}
-			if(resroot)
-			{
-				cout<<"int main() need a return statement"<<endl;
-				return true;
-			}
-		}
-		return res;
-	}
 %}
 
 %union{
@@ -110,7 +16,7 @@
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token GREATER LESS NEQUAL EQUAL SELFPLUS SELFMINUS NOT GREATEREQ LESSEQ
-%type<node> CompoundK Content Conclude Var Expr Type Opnum RepeatK Condition IDdec Const s ReturnStmt
+%type<node> CompoundK Content Conclude Var Expr Type Opnum RepeatK Condition IDdec Const s ReturnStmt ExprNull VarExprNull
 
 %right ASSIGN
 %left EQUAL NEQUAL
@@ -149,9 +55,9 @@ CompoundK :		LBRACE Content RBRACE {$$=$2;}
 
  /* 大括号里包含的内容*/
 Content :		Conclude		
-		{$$=new Node("CompoundK statement", 0);insertChildren($$,$1,NULL);}
+		{$$=new Node("CompoundK statement", 0);insertChildren($$,$1,new Node("$", 0));}
 	|			Content Conclude	
-		{insertChildren($$,$2,NULL);}
+		{insertChildren($$,$2,new Node("$", 0));}
 	;
  /* 大括号里包含的内容的具体归纳 */
 Conclude :		Var			{$$=$1;}
@@ -164,70 +70,76 @@ Conclude :		Var			{$$=$1;}
  ReturnStmt :	RETURN SEMICOLON
 		{$$=$1;$$->key="Return statement"}
 	|			RETURN Opnum SEMICOLON
-		{$$=$1;$$->key="Return expr statement";insertChildren($$, $2,NULL);}
+		{$$=$1;$$->key="Return expr statement";insertChildren($$, $2,new Node("$", 0));}
  /* 条件结构 */
 Condition :		IF LP Expr RP CompoundK %prec LOW		
-{$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$5,NULL);}
+{$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$5,new Node("$", 0));}
 	|			IF LP Expr RP CompoundK ELSE CompoundK		
-	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$3,$5,$7,NULL);}
+	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
 	|			IF LP Expr RP CompoundK ELSE Condition		
-	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$3,$5,$7,NULL);}
+	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
 	;
  /* 循环体结构 */
-RepeatK :		FOR LP  Var Expr SEMICOLON Expr RP CompoundK		
-{$$=new Node("RepeatK statement, for ", 0);insertChildren($$,$3,$4,$6,$8,NULL);}
+RepeatK :		FOR LP  VarExprNull ExprNull SEMICOLON ExprNull RP CompoundK		
+{$$=new Node("RepeatK statement, for ", 0);insertChildren($$,$3,$4,$6,$8,new Node("$", 0));}
 	|			WHILE LP Expr RP CompoundK		
-{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,NULL);}
+{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,new Node("$", 0));}
 	;
  /* 声明变量 或者 声明变量并赋值 */
 Var :		Type IDdec ASSIGN Opnum SEMICOLON
-{$$=new Node("Var Declaration with Assign", 0);insertChildren($$,$1,$2,$4,NULL);}
+{$$=new Node("Var Declaration with Assign", 0);insertChildren($$,$1,$2,$4,new Node("$", 0));}
 	|		Type IDdec	SEMICOLON	
-{$$=new Node("Var Declaration ", 0);insertChildren($$,$1,$2,NULL);}
+{$$=new Node("Var Declaration ", 0);insertChildren($$,$1,$2,new Node("$", 0));}
 	;
  /* 类型声明 */
 Type :		INT {$$=new Node("Type Specifier, int", 0);}
 	;
-
+ /*声明或者表达式或者空*/
+VarExprNull :	Var {$$=$1;}
+	|			Expr SEMICOLON {$$=$1;}
+	|			SEMICOLON {$$=NULL;}
+ /*表达式或者空*/
+ExprNull :	Expr	{$$ = $1;}			
+	|		{$$=NULL;}
  /* 表达式*/
 Expr :		Opnum PLUS Opnum	
-	{$$=new Node("Expr,op : +", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : +", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum MINUS Opnum		
-	{$$=new Node("Expr,op : -", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : -", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum MULTIPLY Opnum		
-	{$$=new Node("Expr,op : *", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : *", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum DIVIDE Opnum		
-	{$$=new Node("Expr,op : /", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : /", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum MODEL Opnum		
-	{$$=new Node("Expr,op : %", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : %", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum POW Opnum		
-	{$$=new Node("Expr,op : ^", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : ^", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum GREATER Opnum		
-	{$$=new Node("Expr,op : >", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : >", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum GREATEREQ Opnum		
-	{$$=new Node("Expr,op : >=", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : >=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum LESS Opnum		
-	{$$=new Node("Expr,op : <", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : <", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum LESSEQ Opnum		
-	{$$=new Node("Expr,op : <=", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : <=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum NEQUAL Opnum		
-	{$$=new Node("Expr,op : !=", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : !=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum EQUAL Opnum		
-	{$$=new Node("Expr,op : ==", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : ==", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum ASSIGN Opnum		
-	{$$=new Node("Expr,op : =", 0);insertChildren($$,$1,$3,NULL);}
+	{$$=new Node("Expr,op : =", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum SELFPLUS		
-	{$$=new Node("Expr,op : i++", 0);insertChildren($$,$1,NULL);}
+	{$$=new Node("Expr,op : i++", 0);insertChildren($$,$1,new Node("$", 0));}
 	|		Opnum SELFMINUS		
-	{$$=new Node("Expr,op : i--", 0);insertChildren($$,$1,NULL);}
+	{$$=new Node("Expr,op : i--", 0);insertChildren($$,$1,new Node("$", 0));}
 	|		SELFPLUS Opnum		
-	{$$=new Node("Expr,op : ++i", 0);insertChildren($$,$2,NULL);}
+	{$$=new Node("Expr,op : ++i", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		SELFMINUS Opnum		
-	{$$=new Node("Expr,op : --i", 0);insertChildren($$,$2,NULL);}
+	{$$=new Node("Expr,op : --i", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		NOT Opnum		
-	{$$=new Node("Expr,op : !", 0);insertChildren($$,$2,NULL);}
+	{$$=new Node("Expr,op : !", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		LP Opnum RP
-	{$$=new Node("Expr,op : ()", 0);insertChildren($$,$2,NULL);}	
+	{$$=new Node("Expr,op : ()", 0);insertChildren($$,$2,new Node("$", 0));}
 	;
  /*操作数*/
 Opnum :		Const	{$$=$1;}
