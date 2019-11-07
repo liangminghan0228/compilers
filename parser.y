@@ -41,6 +41,62 @@
 	     }
 	     va_end(list);
 	}
+	bool returnError(Node*p, Node*root, bool isInt)//有语法错误返回true
+	{
+		//如果这个节点不为空且为return、
+		if(p && p->key == "Return statement")
+		{
+			if(isInt)
+			{
+				cout<<"return error : need a return statement or expr after return at line "<<p->line<<" col "<<p->col<<endl;
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if(p && p->key == "Return expr statement")
+		{
+			if(isInt)
+			{
+				return false;
+			}
+			else
+			{
+				cout<<"return error : unexpected expr after return at line "<<p->line<<" col "<<p->col<<endl;
+				return true;
+			}
+		}
+		bool res = false;
+		for(int i = 0; i < p->children.size(); i++)
+		{
+			int subres = returnError(p->children[i], root, isInt);
+			res = res || subres;
+		}
+		//void返回递归得到的res,默认为没有语法错误
+		if(!isInt)
+		{
+			return res;
+		}
+		else if(isInt && p == root)//在最外层的递归调用
+		{
+			bool resroot = true;//默认有语法错误
+			for(int i = 0; i < p->children.size(); i++)
+			{
+				if(p->children[i]->key == "Return expr statement" || p->children[i]->key == "Return statement")
+				{
+					resroot = false;//有return语句就没有这个语法错误
+				}
+			}
+			if(resroot)
+			{
+				cout<<"int main() need a return statement"<<endl;
+				return true;
+			}
+		}
+		return res;
+	}
 %}
 
 %union{
@@ -54,7 +110,7 @@
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token GREATER LESS NEQUAL EQUAL SELFPLUS SELFMINUS NOT GREATEREQ LESSEQ
-%type<node> CompoundK Content Conclude Var Expr Type Opnum RepeatK Condition IDdec Const s
+%type<node> CompoundK Content Conclude Var Expr Type Opnum RepeatK Condition IDdec Const s ReturnStmt
 
 %right ASSIGN
 %left EQUAL NEQUAL
@@ -66,37 +122,49 @@
 %left LP RP
 %nonassoc LOW
 %nonassoc ELSE
-%nonassoc RETURN
 %%
  /* 开始符号 */
-s : 	INT MAIN LP RP CompoundK {$$=$5;print($$, 2);}
-	|	VOID MAIN LP RP CompoundK {$$=$5;print($$, 2);}
+s : 	INT MAIN LP RP CompoundK 
+		{
+			$$=$5;
+			if(!returnError($$, $$, true))
+			{
+				print($$, 2);
+			}
+		}
+	|	VOID MAIN LP RP CompoundK 
+		{
+			$$=$5;
+			if(!returnError($$, $$, false))
+			{
+				print($$, 2);
+			}
+		}
 	;
+
 
  /* 大括号包起来的部分*/
 CompoundK :		LBRACE Content RBRACE {$$=$2;}
 	;
 
  /* 大括号里包含的内容*/
-Content :		Conclude %prec LOW		
+Content :		Conclude		
 		{$$=new Node("CompoundK statement", 0);insertChildren($$,$1,NULL);}
-	|			Content Conclude	%prec LOW	
+	|			Content Conclude	
 		{insertChildren($$,$2,NULL);}
-	|			Conclude RETURN SEMICOLON	
-		{$$=new Node("CompoundK statement", 0);$2->key = "Return statement";insertChildren($$,$1,$2,NULL);}
-	|			Content Conclude RETURN SEMICOLON	
-		{$3->key = "Return statement";insertChildren($$,$2,$3,NULL);}
-	|			Conclude RETURN Opnum SEMICOLON	
-		{$$=new Node("CompoundK statement", 0);$2->key = "Return expr statement";insertChildren($2,$3,NULL);insertChildren($$,$1,$2,NULL);}
-	|			Content Conclude RETURN Opnum SEMICOLON	
-		{$3->key = "Return expr statement";insertChildren($3,$4,NULL);insertChildren($$,$2,$3,NULL);}
 	;
  /* 大括号里包含的内容的具体归纳 */
 Conclude :		Var			{$$=$1;}
 	|			Expr SEMICOLON		{$$=$1;}
 	|			RepeatK				{$$=$1;}
 	|			Condition			{$$=$1;}
+	|			ReturnStmt			{$$=$1;}
 	;
+ /*返回的语句*/
+ ReturnStmt :	RETURN SEMICOLON
+		{$$=$1;$$->key="Return statement"}
+	|			RETURN Opnum SEMICOLON
+		{$$=$1;$$->key="Return expr statement";insertChildren($$, $2,NULL);}
  /* 条件结构 */
 Condition :		IF LP Expr RP CompoundK %prec LOW		
 {$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$5,NULL);}
