@@ -14,12 +14,21 @@ class Node
     public:
         string key;
         int val;
-        int count=0;
+        int count = 0;
+        int line = 0;
+        int col = 0;
         vector<Node*>children;
         Node(string key, int val)
         {
             this->val = val;
             this->key = key;
+        }
+        Node(string key, int val, int line, int col)
+        {
+            this->val = val;
+            this->key = key;
+            this->line = line;
+            this->col = col;
         }        
         void addChild(Node* c)
         {

@@ -33,49 +33,13 @@
 	    {
 	         count++;
 			 child = va_arg(list, Node*);
-	         if(child == 0)
+	         if(child==0)
 	         {    
 				   break;
 	         }
 	         par->addChild(child);    
 	     }
 	     va_end(list);
-	}
-	bool returnError(Node*p,bool isInt)//有语法错误返回true
-	{
-		//如果这个节点不为空且为return、
-		if(p && p->key == "Return statement")
-		{
-			if(isInt)
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if(p && p->key == "Return expr statement")
-		{
-			if(isInt)
-			{
-				return false;
-			}
-			else
-			{
-				return true;
-			}
-		}
-		bool res = false;
-		for(int i = 0; i < p->children.size(); i++)
-		{
-			res = res || returnError(p->children[i], isInt);
-		}
-		if(!isInt)
-		{
-			return res;
-		}
-		return true;
 	}
 %}
 
@@ -105,30 +69,8 @@
 %nonassoc RETURN
 %%
  /* 开始符号 */
-s : 	INT MAIN LP RP CompoundK 
-		{
-			$$=$5;
-			if(!returnError($$,true))
-			{
-				print($$, 2);
-			}
-			else
-			{
-				cout<<"return error : need a return statement or expr after return"<<endl;
-			}
-		}
-	|	VOID MAIN LP RP CompoundK 
-		{
-			$$=$5;
-			if(!returnError($$,false))
-			{
-				print($$, 2);
-			}
-			else
-			{
-				cout<<"return error : unexpected expr after return"<<endl;
-			}
-		}
+s : 	INT MAIN LP RP CompoundK {$$=$5;print($$, 2);}
+	|	VOID MAIN LP RP CompoundK {$$=$5;print($$, 2);}
 	;
 
  /* 大括号包起来的部分*/
@@ -141,13 +83,13 @@ Content :		Conclude %prec LOW
 	|			Content Conclude	%prec LOW	
 		{insertChildren($$,$2,NULL);}
 	|			Conclude RETURN SEMICOLON	
-		{$$=new Node("CompoundK statement", 0);$2=new Node("Return statement", 0);insertChildren($$,$1,$2,NULL);}
+		{$$=new Node("CompoundK statement", 0);$2->key = "Return statement";insertChildren($$,$1,$2,NULL);}
 	|			Content Conclude RETURN SEMICOLON	
-		{$3=new Node("Return statement", 0);insertChildren($$,$2,$3,NULL);}
+		{$3->key = "Return statement";insertChildren($$,$2,$3,NULL);}
 	|			Conclude RETURN Opnum SEMICOLON	
-		{$$=new Node("CompoundK statement", 0);$2=new Node("Return expr statement", 0);insertChildren($2,$3,NULL);insertChildren($$,$1,$2,NULL);}
+		{$$=new Node("CompoundK statement", 0);$2->key = "Return expr statement";insertChildren($2,$3,NULL);insertChildren($$,$1,$2,NULL);}
 	|			Content Conclude RETURN Opnum SEMICOLON	
-		{$3=new Node("Return expr statement", 0);insertChildren($3,$4,NULL);insertChildren($$,$2,$3,NULL);}
+		{$3->key = "Return expr statement";insertChildren($3,$4,NULL);insertChildren($$,$2,$3,NULL);}
 	;
  /* 大括号里包含的内容的具体归纳 */
 Conclude :		Var			{$$=$1;}
