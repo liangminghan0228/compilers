@@ -27,17 +27,33 @@
 		int count=0;
 	    while(1)
 	    {
-	         count++;
-			 child = va_arg(list, Node*);
-			 if(child!=NULL)
-			 {
-				 if(child->key != "$")
-				 	par->addChild(child);
-				 else
-				 	break;
-			 }
-			 else
-				continue;			 
+	        count++;
+			child = va_arg(list, Node*);
+			if(child!=NULL)
+			{
+				if(child->key != "$")
+			 	{
+					par->addChild(child);
+					if(child->line > par->line && child->col > par->col)
+					{
+						par->line = child->line;
+						par->col = child->col;
+					}
+					if(child->line < par->line)
+					{
+						child->line = par->line;
+					}
+					if(child->col < par->col)
+					{
+						child->col = par->col;
+					}
+					
+			 	}
+			 	else
+			 		break;
+			}
+			else
+			continue;			 
 	     }
 	     va_end(list);
 	}
