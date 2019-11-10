@@ -11,7 +11,7 @@
 }
 %token<node>NUMBER
 %token<node>ID
-%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT
+%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT IF
 %token RETURN MAIN VOID PLUS MINUS MULTIPLY DIVIDE POW MODEL PRINT
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
@@ -31,7 +31,7 @@
 
 %left LP RP
 %nonassoc ID NUMBER //当读到return时用来先移进number和id后归约return
-
+%nonassoc LBRACE
 %nonassoc ELSE //解决else相关的冲突
 %nonassoc SEMICOLON //解决去掉分号后的表达式归约移进相关的冲突
 
@@ -89,7 +89,7 @@ Writek :		PRINT OpnumNull SEMICOLON
 	;
 
 
- /*返回的语句*/
+ /* 返回的语句 */
  ReturnStmt :	RETURN SEMICOLON
 		{$$=$1;$$->key="Return statement";}
 	|			RETURN %prec LOWEST /*return后缺少了分号报错*/
@@ -105,6 +105,39 @@ Condition :		IF LP Opnum RP CompoundK %prec LOWEST
 	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
 	|			IF LP Opnum RP CompoundK ELSE Condition		
 	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
+ 	/* 缺左括号 */
+	|			IF Opnum RP CompoundK %prec LOWEST		
+{$$=new Node("Condition statement,only if", 0);insertChildren($$,$2,$4,new Node("$", 0));
+cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			IF Opnum RP CompoundK ELSE CompoundK		
+	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			IF Opnum RP CompoundK ELSE Condition		
+	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	/* 缺右括号 */
+	|			IF LP Opnum CompoundK %prec LOWEST		
+{$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$4,new Node("$", 0));
+cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	|			IF LP Opnum CompoundK ELSE CompoundK		
+	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
+	cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	|			IF LP Opnum CompoundK ELSE Condition		
+	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
+	cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	/* 缺两个括号 */
+	|			IF Opnum CompoundK %prec LOWEST		
+{$$=new Node("Condition statement,only if", 0);insertChildren($$,$2,$3,new Node("$", 0));
+cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			IF Opnum CompoundK ELSE CompoundK		
+	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			IF Opnum CompoundK ELSE Condition		
+	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
 	;
 
 
@@ -189,7 +222,7 @@ Expr :		Opnum PLUS Opnum
 	{$$=new Node("Expr,op : --i", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		NOT Opnum		
 	{$$=new Node("Expr,op : !", 0);insertChildren($$,$2,new Node("$", 0));}
-	|		LP Opnum RP
+	|		LP Opnum RP %prec LOWEST
 	{$$=new Node("Expr,op : ()", 0);insertChildren($$,$2,new Node("$", 0));}
 	;
  /*操作数*/
