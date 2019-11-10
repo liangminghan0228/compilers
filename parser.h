@@ -64,7 +64,7 @@
 		{
 			if(isInt)
 			{
-				cout<<"return error : need a return statement or expr after return at line "<<p->line<<" col "<<p->col<<endl;
+				cout<<"return error : need a return statement or expr after return at line "<<p->line<<endl;
 				return true;
 			}
 			else
@@ -80,7 +80,7 @@
 			}
 			else
 			{
-				cout<<"return error : unexpected expr after return at line "<<p->line<<" col "<<p->col<<endl;
+				cout<<"return error : unexpected expr after return at line "<<p->line<<endl;
 				return true;
 			}
 		}

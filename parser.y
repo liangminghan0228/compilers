@@ -42,19 +42,19 @@
 s : 	INT MAIN LP RP CompoundK 
 {$$=$5;returnError($$, $$, true);print($$, 2);}
 	|	INT MAIN RP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$2->line<<endl;print($$, 2);}
 	|	INT MAIN LP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$3->line<<endl;print($$, 2);}
 	|	INT MAIN CompoundK 
-{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
+{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$2->line<<endl;print($$, 2);}
 	|	VOID MAIN LP RP CompoundK 
 {$$=$5;returnError($$, $$, false);print($$, 2);}
 	|	VOID MAIN RP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$2->line<<endl;print($$, 2);}
 	|	VOID MAIN LP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$3->line<<endl;print($$, 2);}
 	|	VOID MAIN CompoundK 
-{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
+{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$2->line<<endl;print($$, 2);}
 	;
 
 
@@ -63,9 +63,9 @@ CompoundK :		LBRACE Content RBRACE {$$=$2;}
 	|			LBRACE RBRACE {$$=new Node("CompoundK statement", 0);}
 	/* 缺右括号 */
 	|			LBRACE Content %prec LOWEST
-	{$$=$2;cout<<"need a '}' in line "<<$$->line<<" col "<<$$->col<<endl;}
+	{$$=$2;cout<<"need a '}' in line "<<$$->line<<endl;}
 	|			LBRACE %prec LOWEST
-	{$$=new Node("CompoundK statement", 0);cout<<"need a '}' in line "<<$$->line<<" col "<<$$->col<<endl;}
+	{$$=new Node("CompoundK statement", 0);cout<<"need a '}' in line "<<$$->line<<endl;}
 	
 	;
 
@@ -77,9 +77,9 @@ Content :		Conclude
 	;
  /* 大括号里包含的内容的具体归纳 */
 Conclude :		Var	SEMICOLON		{$$=$1;}
-	|			Var					{$$=$1;cout<<"need a ';' in line "<<$$->line<<" col "<<$$->col<<endl;}
+	|			Var					{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
 	|			Opnum SEMICOLON		{$$=$1;}
-	|			Opnum %prec LOWEST	{$$=$1;cout<<"need a ';' in line "<<$$->line<<" col "<<$$->col<<endl;}
+	|			Opnum %prec LOWEST	{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
 	|			RepeatK				{$$=$1;}
 	|			Condition			{$$=$1;}
 	|			ReturnStmt			{$$=$1;}
@@ -90,27 +90,27 @@ Conclude :		Var	SEMICOLON		{$$=$1;}
  /* 输出的语句 */
 Writek :		PRINT OpnumNull SEMICOLON 
 	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
-	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;}
 	|			PRINT OpnumNull/*缺少分号*/
 	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
-	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
-	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;
+	cout<<"need a ';' in line "<<$2->line<<endl;}
 	;
 
 Readk :			SCANF IDdec SEMICOLON
 	{$$=new Node("Readk statement,", 0); insertChildren($$, $2, new Node("$", 0));}
 	|			SCANF IDdec
 	{$$=new Node("Readk statement,", 0); insertChildren($$, $2, new Node("$", 0));
-	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	cout<<"need a ';' in line "<<$2->line<<endl;}
  /* 返回的语句 */
  ReturnStmt :	RETURN SEMICOLON
 		{$$=$1;$$->key="Return statement";}
 	|			RETURN %prec LOWEST /*return后缺少了分号报错*/
-		{$$=$1;$$->key="Return statement";cout<<"need a ';' in line "<<$$->line<<" col "<<$$->col<<endl;}
+		{$$=$1;$$->key="Return statement";cout<<"need a ';' in line "<<$$->line<<endl;}
 	|			RETURN Opnum SEMICOLON
 		{$$=$1;$$->key="Return expr statement";insertChildren($$, $2,new Node("$", 0));}
 	|			RETURN Opnum %prec LOWEST  /*return后缺少了分号报错*/
-		{$$=$1;$$->key="Return expr statement";insertChildren($$, $2,new Node("$", 0));cout<<"need a ';' in line "<<$$->line<<" col "<<$$->col<<endl;}
+		{$$=$1;$$->key="Return expr statement";insertChildren($$, $2,new Node("$", 0));cout<<"need a ';' in line "<<$$->line<<endl;}
  /* 条件结构 */
 Condition :		IF LP Opnum RP CompoundK %prec LOWEST		
 {$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$5,new Node("$", 0));}
@@ -121,36 +121,36 @@ Condition :		IF LP Opnum RP CompoundK %prec LOWEST
  	/* 缺左括号 */
 	|			IF Opnum RP CompoundK %prec LOWEST		
 {$$=new Node("Condition statement,only if", 0);insertChildren($$,$2,$4,new Node("$", 0));
-cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+cout<<"need a '(' in line "<<$1->line<<endl;}
 	|			IF Opnum RP CompoundK ELSE CompoundK		
 	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	cout<<"need a '(' in line "<<$1->line<<endl;}
 	|			IF Opnum RP CompoundK ELSE Condition		
 	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	cout<<"need a '(' in line "<<$1->line<<endl;}
 	/* 缺右括号 */
 	|			IF LP Opnum CompoundK %prec LOWEST		
 {$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$4,new Node("$", 0));
-cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+cout<<"need a ')' in line "<<$3->line<<endl;}
 	|			IF LP Opnum CompoundK ELSE CompoundK		
 	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
-	cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	cout<<"need a ')' in line "<<$3->line<<endl;}
 	|			IF LP Opnum CompoundK ELSE Condition		
 	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
-	cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	cout<<"need a ')' in line "<<$3->line<<endl;}
 	/* 缺两个括号 */
 	|			IF Opnum CompoundK %prec LOWEST		
 {$$=new Node("Condition statement,only if", 0);insertChildren($$,$2,$3,new Node("$", 0));
-cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+cout<<"need a '(' in line "<<$1->line<<endl;
+cout<<"need a ')' in line "<<$2->line<<endl;}
 	|			IF Opnum CompoundK ELSE CompoundK		
 	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	cout<<"need a '(' in line "<<$1->line<<endl;
+	cout<<"need a ')' in line "<<$2->line<<endl;}
 	|			IF Opnum CompoundK ELSE Condition		
 	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	cout<<"need a '(' in line "<<$1->line<<endl;
+	cout<<"need a ')' in line "<<$2->line<<endl;}
 	;
 
 
@@ -159,36 +159,36 @@ RepeatK :		FOR LP ForHeader RP CompoundK
 {$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $5, new Node("$", 0));}
 	|			WHILE LP Opnum RP CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,new Node("$", 0));
-if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;}
 	|			WHILE LP RP CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$,new Node("NULL", 0),$4,new Node("$", 0));
-cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+cout<<"need a expr in line "<<$2->line<<endl;}
 	/* 缺左括号 */
 	|			FOR ForHeader RP CompoundK
 {$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $2, $4, new Node("$", 0));
-cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+cout<<"need a '(' in line "<<$1->line<<endl;}
 	|			WHILE OpnumNull RP CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$, $2, $4, new Node("$", 0));
-if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
-cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<endl;
+cout<<"need a '(' in line "<<$1->line<<endl;}
 	/* 缺右括号 */
 	|			FOR LP ForHeader CompoundK
 {$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $4, new Node("$", 0));
-cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+cout<<"need a ')' in line "<<$3->line<<endl;}
 	|			WHILE LP OpnumNull CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$4,new Node("$", 0));
-if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
-cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;
+cout<<"need a ')' in line "<<$2->line<<endl;}
 	/* 缺少两个括号 */
 	|			FOR ForHeader CompoundK
 {$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $2, $3, new Node("$", 0));
-cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+cout<<"need a '(' in line "<<$1->line<<endl;
+cout<<"need a ')' in line "<<$2->line<<endl;}
 	|			WHILE OpnumNull CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$2,$3,new Node("$", 0));
-if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
-cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-cout<<"need a ')' in line "<<$1->line<<" col "<<$1->col<<endl;}
+if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<endl;
+cout<<"need a '(' in line "<<$1->line<<endl;
+cout<<"need a ')' in line "<<$1->line<<endl;}
 	;
 
 
@@ -197,14 +197,14 @@ ForHeader :		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
 	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $3, $5, new Node("$", 0));}
 	|			VarOpnum OpnumNull SEMICOLON OpnumNull /* 缺第一个分号 */
 	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $2, $4, new Node("$", 0));
-	cout<<"need a ';' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	cout<<"need a ';' in line "<<$1->line<<endl;}
 	|			VarOpnum SEMICOLON OpnumNull OpnumNull /* 缺第二个分号 */
 	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $3, $4, new Node("$", 0));
-	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	cout<<"need a ';' in line "<<$3->line<<endl;}
 	|			VarOpnum OpnumNull OpnumNull /* 缺两个分号 */
 	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $2, $3, new Node("$", 0));
-	cout<<"need a ';' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	cout<<"need a ';' in line "<<$1->line<<endl;
+	cout<<"need a ';' in line "<<$2->line<<endl;}
 	;
 
 
@@ -303,6 +303,8 @@ int yyerror(const char* msg)
 int main()
 {
 	extern FILE* yyin;
-	yyin=fopen("5.c", "r");
+	string path = "";
+	cin>>path;
+	yyin=fopen(path.c_str(), "r");
 	yyparse();
 }
