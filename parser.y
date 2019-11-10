@@ -17,7 +17,7 @@
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ
 %type<node> CompoundK Content Conclude Var Expr Type 
-%type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek
+%type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
 %right ASSIGN
@@ -142,21 +142,29 @@ cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
 
 
  /* 循环体结构 */
-RepeatK :		FOR LP VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull RP CompoundK
-{$$=new Node("RepeatK statement, for ", 0);insertChildren($$,$3,$5,$7,$9,new Node("$", 0));}
-	|			FOR LP VarOpnum OpnumNull SEMICOLON OpnumNull RP CompoundK
-{$$=new Node("RepeatK statement, for ", 0);insertChildren($$,$3,$4,$6,$8,new Node("$", 0));
-cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
-	|			FOR LP VarOpnum SEMICOLON OpnumNull OpnumNull RP CompoundK
-{$$=new Node("RepeatK statement, for ", 0);insertChildren($$,$3,$5,$6,$8,new Node("$", 0));
-cout<<"need a ';' in line "<<$7->line<<" col "<<$7->col<<endl;}
-	|			FOR LP VarOpnum OpnumNull OpnumNull RP CompoundK
-{$$=new Node("RepeatK statement, for ", 0);insertChildren($$,$3,$4,$5,$7,new Node("$", 0));
-cout<<"need two ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
+RepeatK :		FOR LP ForHeader RP CompoundK
+{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $5, new Node("$", 0));}
+
 	|			WHILE LP Opnum RP CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,new Node("$", 0));}
 	|			WHILE LP RP CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$4,new Node("$", 0));cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+	;
+
+
+ /* for循环小括号内三个表达式 */
+ForHeader :		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
+	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $3, $5, new Node("$", 0));}
+	|			VarOpnum OpnumNull SEMICOLON OpnumNull /* 缺第一个分号 */
+	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $2, $4, new Node("$", 0));
+	cout<<"need a ';' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			VarOpnum SEMICOLON OpnumNull OpnumNull /* 缺第二个分号 */
+	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $3, $4, new Node("$", 0));
+	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	|			VarOpnum OpnumNull OpnumNull /* 缺两个分号 */
+	{$$=new Node("ForHeader", 0);insertChildren($$, $1, $2, $3, new Node("$", 0));
+	cout<<"need a ';' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
 	;
 
 
