@@ -11,13 +11,13 @@
 }
 %token<node>NUMBER
 %token<node>ID
-%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT IF FOR WHILE
+%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT IF FOR WHILE MAIN
 %token RETURN MAIN VOID PLUS MINUS MULTIPLY DIVIDE POW MODEL PRINT
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ
 %type<node> CompoundK Content Conclude Var Expr Type
-%type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader
+%type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader RBRACE
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
 %right ASSIGN
@@ -26,7 +26,7 @@
 %left PLUS MINUS
 %left MULTIPLY DIVIDE MODEL
 %right POW
-%nonassoc EXPRNULL
+%nonassoc RETURN PRINT IF FOR WHILE INT RBRACE
 %right SELFPLUS SELFMINUS NOT
 
 %left LP RP
@@ -40,25 +40,31 @@
 s : 	INT MAIN LP RP CompoundK 
 {$$=$5;returnError($$, $$, true);print($$, 2);}
 	|	INT MAIN RP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
 	|	INT MAIN LP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;print($$, 2);}
 	|	INT MAIN CompoundK 
-{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
 	|	VOID MAIN LP RP CompoundK 
 {$$=$5;returnError($$, $$, false);print($$, 2);}
 	|	VOID MAIN RP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
 	|	VOID MAIN LP CompoundK 
-{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;print($$, 2);}
 	|	VOID MAIN CompoundK 
-{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$2->line<<" col "<<$2->col<<endl;print($$, 2);}
 	;
 
 
  /* 大括号包起来的部分*/
 CompoundK :		LBRACE Content RBRACE {$$=$2;}
-	|			LBRACE RBRACE {$$=NULL;}
+	|			LBRACE RBRACE {$$=new Node("CompoundK statement", 0);}
+	/* 缺右括号 */
+	|			LBRACE Content %prec LOWEST
+	{$$=$2;cout<<"need a '}' in line "<<$$->line<<" col "<<$$->col<<endl;}
+	|			LBRACE %prec LOWEST
+	{$$=new Node("CompoundK statement", 0);cout<<"need a '}' in line "<<$$->line<<" col "<<$$->col<<endl;}
+	
 	;
 
  /* 大括号里包含的内容*/
@@ -281,6 +287,6 @@ int yyerror(const char* msg)
 int main()
 {
 	extern FILE* yyin;
-	yyin=fopen("5.c", "r");
+	yyin=fopen("1.c", "r");
 	yyparse();
 }
