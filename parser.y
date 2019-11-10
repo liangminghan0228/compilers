@@ -11,12 +11,12 @@
 }
 %token<node>NUMBER
 %token<node>ID
-%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT IF FOR WHILE MAIN
+%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT IF FOR WHILE MAIN COMMA
 %token RETURN MAIN VOID PLUS MINUS MULTIPLY DIVIDE POW MODEL PRINT
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ
-%type<node> CompoundK Content Conclude Var Expr Type
+%type<node> CompoundK Content Conclude Var Expr Type Define
 %type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader Readk
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
@@ -207,13 +207,18 @@ ForHeader :		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
 
 
  /* 声明变量 或者 声明变量并赋值 */
-Var :		Type IDdec ASSIGN Opnum
-{$$=new Node("Var Declaration with Assign", 0);insertChildren($$,$1,$2,$4,new Node("$", 0));}
+Var :		Type Define
+	{$$=new Node("Var Declaration ", 0);insertChildren($$, $1, $2, new Node("$", 0));}
 	|		Type IDdec
-{$$=new Node("Var Declaration ", 0);insertChildren($$,$1,$2,new Node("$", 0));}
+	{$$=new Node("Var Declaration ", 0);insertChildren($$, $1, $2, new Node("$", 0));}
+	|		Var COMMA IDdec
+	{insertChildren($$, $3, new Node("$", 0));}
+	|		Var COMMA Define
+	{insertChildren($$, $3, new Node("$", 0));}
 	;
 
-
+ /* 定义一个变量 */
+Define :	IDdec ASSIGN Opnum {$$=new Node("ASSIGN Expr,", 0); insertChildren($$, $1, $3, new Node("$", 0));}
  /* 类型声明 */
 Type :		INT {$$=new Node("Type Specifier, int", 0);}
 	;
