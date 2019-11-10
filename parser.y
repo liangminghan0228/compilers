@@ -144,9 +144,12 @@ cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
  /* 循环体结构 */
 RepeatK :		FOR LP ForHeader RP CompoundK
 {$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $5, new Node("$", 0));}
-	|			WHILE LP OpnumNull RP CompoundK
+	|			WHILE LP Opnum RP CompoundK
 {$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,new Node("$", 0));
 if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			WHILE LP RP CompoundK
+{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,new Node("NULL", 0),$4,new Node("$", 0));
+cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
 	/* 缺左括号 */
 	|			FOR ForHeader RP CompoundK
 {$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $2, $4, new Node("$", 0));
