@@ -15,12 +15,14 @@
 %token RETURN MAIN VOID PLUS MINUS MULTIPLY DIVIDE POW MODEL PRINT
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
-%token GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ
+%token GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ AND OR
 %type<node> CompoundK Content Conclude Var Expr Type Define
 %type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader Readk
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
 %right ASSIGN
+%left AND
+%left OR
 %left EQUAL NEQUAL
 %left GREATER LESS GREATEREQ LESSEQ
 %left PLUS MINUS
@@ -263,6 +265,10 @@ Expr :		Opnum PLUS Opnum
 	{$$=new Node("Expr,op : ==", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum ASSIGN Opnum		
 	{$$=new Node("Expr,op : =", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	|		Opnum AND Opnum		
+	{$$=new Node("Expr,op : &&", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	|		Opnum OR Opnum		
+	{$$=new Node("Expr,op : ||", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum SELFPLUS
 	{$$=$2;$$->key="Expr,op : i++";insertChildren($$,$1,new Node("$", 0));}
 	|		Opnum SELFMINUS
