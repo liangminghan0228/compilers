@@ -17,7 +17,7 @@
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ
 %type<node> CompoundK Content Conclude Var Expr Type
-%type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader RBRACE
+%type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader Readk
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
 %right ASSIGN
@@ -26,7 +26,7 @@
 %left PLUS MINUS
 %left MULTIPLY DIVIDE MODEL
 %right POW
-%nonassoc RETURN PRINT IF FOR WHILE INT RBRACE
+%nonassoc RETURN PRINT SCANF IF FOR WHILE INT RBRACE
 %right SELFPLUS SELFMINUS NOT
 
 %left LP RP
@@ -82,9 +82,10 @@ Conclude :		Var	SEMICOLON		{$$=$1;}
 	|			Condition			{$$=$1;}
 	|			ReturnStmt			{$$=$1;}
 	|			Writek				{$$=$1;}
+	|			Readk				{$$=$1;}
 	;
  
- /*输出的语句*/
+ /* 输出的语句 */
 Writek :		PRINT OpnumNull SEMICOLON 
 	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
 	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
@@ -94,7 +95,11 @@ Writek :		PRINT OpnumNull SEMICOLON
 	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
 	;
 
-
+Readk :			SCANF IDdec SEMICOLON
+	{$$=new Node("Readk statement,", 0); insertChildren($$, $2, new Node("$", 0));}
+	|			SCANF IDdec
+	{$$=new Node("Readk statement,", 0); insertChildren($$, $2, new Node("$", 0));
+	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
  /* 返回的语句 */
  ReturnStmt :	RETURN SEMICOLON
 		{$$=$1;$$->key="Return statement";}
@@ -287,6 +292,6 @@ int yyerror(const char* msg)
 int main()
 {
 	extern FILE* yyin;
-	yyin=fopen("1.c", "r");
+	yyin=fopen("5.c", "r");
 	yyparse();
 }
