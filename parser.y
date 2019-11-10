@@ -11,7 +11,7 @@
 }
 %token<node>NUMBER
 %token<node>ID
-%token<node>RETURN SELFPLUS SELFMINUS LP RP
+%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT
 %token RETURN MAIN VOID PLUS MINUS MULTIPLY DIVIDE POW MODEL PRINT
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
@@ -38,17 +38,21 @@
 %%
  /* 开始符号 */
 s : 	INT MAIN LP RP CompoundK 
-		{
-			$$=$5;
-			returnError($$, $$, true);
-			print($$, 2);
-		}
+{$$=$5;returnError($$, $$, true);print($$, 2);}
+	|	INT MAIN RP CompoundK 
+{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+	|	INT MAIN LP CompoundK 
+{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+	|	INT MAIN CompoundK 
+{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
 	|	VOID MAIN LP RP CompoundK 
-		{
-			$$=$5;
-			returnError($$, $$, false);
-			print($$, 2);
-		}
+{$$=$5;returnError($$, $$, false);print($$, 2);}
+	|	VOID MAIN RP CompoundK 
+{$$=$4;returnError($$, $$, true);cout<<"need a '(' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+	|	VOID MAIN LP CompoundK 
+{$$=$4;returnError($$, $$, true);cout<<"need a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
+	|	VOID MAIN CompoundK 
+{$$=$3;returnError($$, $$, true);cout<<"need a '(' and a ')' in line "<<$$->line<<" col "<<$$->col<<endl;print($$, 2);}
 	;
 
 
@@ -87,6 +91,61 @@ Writek :		PRINT LP Opnum RP SEMICOLON
 	{$$=new Node("Writek statement", 0);
 	cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
 	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	/*缺左括号*/
+	|			PRINT Opnum RP SEMICOLON 
+	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			PRINT RP SEMICOLON /*缺少表达式*/
+	{$$=new Node("Writek statement", 0);
+	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			PRINT Opnum RP /*缺少分号*/
+	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
+	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			PRINT RP /*缺少表达式和分号*/
+	{$$=new Node("Writek statement", 0);
+	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	/*缺右括号*/
+	|			PRINT LP Opnum SEMICOLON 
+	{$$=new Node("Writek statement", 0);insertChildren($$, $3, new Node("$", 0));
+	cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	|			PRINT LP SEMICOLON /*缺少表达式*/
+	{$$=new Node("Writek statement", 0);
+	cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
+	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			PRINT LP Opnum/*缺少分号*/
+	{$$=new Node("Writek statement", 0);insertChildren($$, $3, new Node("$", 0));
+	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;
+	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			PRINT LP/*缺少表达式和分号*/
+	{$$=new Node("Writek statement", 0);
+	cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
+	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;
+	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	/*缺少左右括号*/
+	|		PRINT Opnum SEMICOLON 
+	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			PRINT SEMICOLON /*缺少表达式*/
+	{$$=new Node("Writek statement", 0);
+	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ')' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			PRINT Opnum %prec LOWEST/*缺少分号*/
+	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
+	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			PRINT %prec LOWEST/*缺少表达式和分号*/
+	{$$=new Node("Writek statement", 0);
+	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ';' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+	cout<<"need a ')' in line "<<$1->line<<" col "<<$1->col<<endl;}
 	;
 
 
@@ -214,6 +273,6 @@ int yyerror(const char* msg)
 int main()
 {
 	extern FILE* yyin;
-	yyin=fopen("1.c", "r");
+	yyin=fopen("5.c", "r");
 	yyparse();
 }
