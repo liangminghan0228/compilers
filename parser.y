@@ -79,73 +79,13 @@ Conclude :		Var	SEMICOLON		{$$=$1;}
 	;
  
  /*输出的语句*/
-Writek :		PRINT LP Opnum RP SEMICOLON 
-	{$$=new Node("Writek statement", 0);insertChildren($$, $3, new Node("$", 0));}
-	|			PRINT LP RP SEMICOLON /*缺少表达式*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
-	|			PRINT LP Opnum RP /*缺少分号*/
-	{$$=new Node("Writek statement", 0);insertChildren($$, $3, new Node("$", 0));
-	cout<<"need a ';' in line "<<$4->line<<" col "<<$4->col<<endl;}
-	|			PRINT LP RP /*缺少表达式和分号*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
-	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;}
-	/*缺左括号*/
-	|			PRINT Opnum RP SEMICOLON 
+Writek :		PRINT OpnumNull SEMICOLON 
 	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
-	|			PRINT RP SEMICOLON /*缺少表达式*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
-	|			PRINT Opnum RP /*缺少分号*/
+	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			PRINT OpnumNull/*缺少分号*/
 	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
-	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
-	|			PRINT RP /*缺少表达式和分号*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
-	/*缺右括号*/
-	|			PRINT LP Opnum SEMICOLON 
-	{$$=new Node("Writek statement", 0);insertChildren($$, $3, new Node("$", 0));
-	cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
-	|			PRINT LP SEMICOLON /*缺少表达式*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
-	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
-	|			PRINT LP Opnum/*缺少分号*/
-	{$$=new Node("Writek statement", 0);insertChildren($$, $3, new Node("$", 0));
-	cout<<"need a ';' in line "<<$3->line<<" col "<<$3->col<<endl;
-	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
-	|			PRINT LP/*缺少表达式和分号*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
-	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;
-	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
-	/*缺少左右括号*/
-	|		PRINT Opnum SEMICOLON 
-	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
-	|			PRINT SEMICOLON /*缺少表达式*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ')' in line "<<$1->line<<" col "<<$1->col<<endl;}
-	|			PRINT Opnum %prec LOWEST/*缺少分号*/
-	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
-	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
-	|			PRINT %prec LOWEST/*缺少表达式和分号*/
-	{$$=new Node("Writek statement", 0);
-	cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ';' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
-	cout<<"need a ')' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
+	cout<<"need a ';' in line "<<$2->line<<" col "<<$2->col<<endl;}
 	;
 
 
