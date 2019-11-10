@@ -11,12 +11,12 @@
 }
 %token<node>NUMBER
 %token<node>ID
-%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT IF
+%token<node>RETURN SELFPLUS SELFMINUS LP RP PRINT IF FOR WHILE
 %token RETURN MAIN VOID PLUS MINUS MULTIPLY DIVIDE POW MODEL PRINT
 %token INT IF ELSE WHILE FOR PRINTF SCANF ASSIGN 
 %token LP RP LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ
-%type<node> CompoundK Content Conclude Var Expr Type 
+%type<node> CompoundK Content Conclude Var Expr Type
 %type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
@@ -144,11 +144,35 @@ cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
  /* 循环体结构 */
 RepeatK :		FOR LP ForHeader RP CompoundK
 {$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $5, new Node("$", 0));}
-
-	|			WHILE LP Opnum RP CompoundK
-{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,new Node("$", 0));}
-	|			WHILE LP RP CompoundK
-{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$4,new Node("$", 0));cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			WHILE LP OpnumNull RP CompoundK
+{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,new Node("$", 0));
+if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;}
+	/* 缺左括号 */
+	|			FOR ForHeader RP CompoundK
+{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $2, $4, new Node("$", 0));
+cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	|			WHILE OpnumNull RP CompoundK
+{$$=new Node("RepeatK statement, while ", 0);insertChildren($$, $2, $4, new Node("$", 0));
+if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
+cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;}
+	/* 缺右括号 */
+	|			FOR LP ForHeader CompoundK
+{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $4, new Node("$", 0));
+cout<<"need a ')' in line "<<$3->line<<" col "<<$3->col<<endl;}
+	|			WHILE LP OpnumNull CompoundK
+{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$4,new Node("$", 0));
+if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<" col "<<$2->col<<endl;
+cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	/* 缺少两个括号 */
+	|			FOR ForHeader CompoundK
+{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $2, $3, new Node("$", 0));
+cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+cout<<"need a ')' in line "<<$2->line<<" col "<<$2->col<<endl;}
+	|			WHILE OpnumNull CompoundK
+{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$2,$3,new Node("$", 0));
+if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<" col "<<$1->col<<endl;
+cout<<"need a '(' in line "<<$1->line<<" col "<<$1->col<<endl;
+cout<<"need a ')' in line "<<$1->line<<" col "<<$1->col<<endl;}
 	;
 
 
