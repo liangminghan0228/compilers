@@ -52,15 +52,16 @@ ERROR               {number}+{letter}+
 <INITIAL>"||"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return OR;}
 
 <INITIAL>"return"            {col += yyleng;yylval.node = new Node("", 0, line, col);return RETURN;}
-<INITIAL>"main"              {col += yyleng;yylval.node = new Node("", 0, line, col);return MAIN;}
-<INITIAL>"void"              {col += yyleng;yylval.node = new Node("", 0, line, col);return VOID;}
-<INITIAL>"int"               {col += yyleng;yylval.node = new Node("", 0, line, col);return INT;}
+<INITIAL>"main"              {col += yyleng;yylval.node = new Node("MAIN", 0, line, col);return MAIN;}
+<INITIAL>"void"              {col += yyleng;yylval.node = new Node("VOID", 0, line, col);return VOID;}
+<INITIAL>"int"               {col += yyleng;yylval.node = new Node("INT", 0, line, col);return INT;}
 <INITIAL>"if"                {col += yyleng;yylval.node = new Node("", 0, line, col);return IF;}
 <INITIAL>"else"              {col += yyleng;yylval.node = new Node("", 0, line, col);return ELSE;}
 <INITIAL>"while"             {col += yyleng;yylval.node = new Node("", 0, line, col);return WHILE;}
 <INITIAL>"for"               {col += yyleng;yylval.node = new Node("", 0, line, col);return FOR;}
 <INITIAL>"print"             {col += yyleng;yylval.node = new Node("", 0, line, col);return PRINT;}
 <INITIAL>"scanf"             {col += yyleng;yylval.node = new Node("", 0, line, col);return SCANF;}
+<INITIAL>"struct"             {col += yyleng;yylval.node = new Node("", 0, line, col);return STRUCT;}
 <INITIAL>"="                 {col += yyleng;yylval.node = new Node("", 0, line, col);return ASSIGN;}
 <INITIAL>"("                 {col += yyleng;yylval.node = new Node("", 0, line, col);return LP;}
 <INITIAL>")"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return RP;}
