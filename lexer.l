@@ -2,14 +2,6 @@
     #include"tree.h"
     #include"parser.tab.h"
     extern YYSTYPE yylval;
-    map<string, int> table;
-    void add(string id) {
-        //默认值都存储为0
-        table.insert(pair<string, int>(id, 0));
-    }
-    int* getID(string id) {
-         return &table[id];
-    }
     int line = 1;
     int col = 0;
 %}
@@ -72,7 +64,7 @@ ERROR               {number}+{letter}+
 <INITIAL>"["                 {col += yyleng;yylval.node = new Node("", 0, line, col);return LMB;}
 <INITIAL>"]"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return RMB;}
 <INITIAL>";"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return SEMICOLON;}
-<INITIAL>{ID}                {col += yyleng;string temp(yytext);add(temp);yylval.node=new Node(yytext, 0, line, col);return ID;}
+<INITIAL>{ID}                {col += yyleng;string temp(yytext);yylval.node=new Node(yytext, 0, line, col);return ID;}
 <INITIAL>{ERROR}             {col += yyleng;return ERROR;}
 .                            {col++;}
 \n                           {line++;col=0;}
