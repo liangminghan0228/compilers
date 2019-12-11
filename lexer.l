@@ -48,6 +48,8 @@ ERROR               {number}+{letter}+
 <INITIAL>"--"                {col += yyleng;yylval.node = new Node("", 0, line, col);return SELFMINUS;}
 <INITIAL>"!"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return NOT;}
 <INITIAL>","                 {col += yyleng;yylval.node = new Node("", 0, line, col);return COMMA;}
+<INITIAL>"."                 {col += yyleng;yylval.node = new Node("", 0, line, col);return DOT;}
+<INITIAL>":"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return COLON;}
 <INITIAL>"&&"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return AND;}
 <INITIAL>"||"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return OR;}
 
