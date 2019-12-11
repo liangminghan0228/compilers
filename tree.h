@@ -14,7 +14,6 @@ class Node
     public:
         string key;
         int val;
-        int count = 0;
         int line = 0;
         int col = 0;
         vector<Node*>children;
@@ -33,7 +32,6 @@ class Node
         void addChild(Node* c)
         {
             this->children.push_back(c);
-            this->count++;
         }
 
 };

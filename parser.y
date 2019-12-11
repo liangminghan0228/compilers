@@ -18,7 +18,7 @@
 %token<node> GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ AND OR
 %type<node> CompoundK Content Conclude VarInt Expr AssignExprInt StructStmt StructInner StructInnerVar BeforeMain MainFunc
 %type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader Readk
-%type<node> VarStruct AssignExprStruct AssignExprStructInner
+%type<node> VarStruct AssignExprStruct AssignExprStructInner Array VarArray
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
 %right ASSIGN
@@ -112,6 +112,7 @@ Content:		Conclude
  /* 大括号里包含的内容的具体归纳 */
 Conclude:		VarInt	SEMICOLON		{$$=$1;}
 	|			VarStruct	SEMICOLON		{$$=$1;}
+	|			VarArray	SEMICOLON		{$$=$1;}
 	|			VarInt									{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
 	|			VarStruct							{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
 	|			Opnum SEMICOLON		{$$=$1;}
@@ -248,7 +249,8 @@ ForHeader:		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
 VarInt:		INT AssignExprInt
 	{$$=new Node("VarInt Declaration ", 0);insertChildren($$, $1, $2, new Node("$", 0));}
 	|		INT IDdec
-	{$$=new Node("VarInt Declaration ", 0);insertChildren($$, $1, $2, new Node("$", 0));}
+	{$$=new Node("VarInt Declaration ", 0);insertChildren($$, $1, $2, new Node("$", 0));
+	add_to_table($2->key, "int");}
 	|		VarInt COMMA IDdec
 	{insertChildren($$, $3, new Node("$", 0));}
 	|		VarInt COMMA AssignExprInt
@@ -257,34 +259,43 @@ VarInt:		INT AssignExprInt
 	 
  /* 定义一个变量 */
 AssignExprInt:		IDdec ASSIGN Opnum 
-	{$$=new Node("ASSIGN Expr,", 0); insertChildren($$, $1, $3, new Node("$", 0));}
+	{$$=new Node("ASSIGN Expr,", 0); insertChildren($$, $1, $3, new Node("$", 0));
+	add_to_table($1->key, "int");}
 	;
 
  /* 结构体相关的初始化*/
 VarStruct:		STRUCT IDdec AssignExprStruct
 	{$$=new Node("VarStruct Declaration ", 0);insertChildren($$, $2, $3, new Node("$", 0));}
 	|		STRUCT IDdec IDdec
-	{$$=new Node("VarStruct Declaration ", 0);insertChildren($$, $2, $3, new Node("$", 0));}
+	{$$=new Node("VarStruct Declaration ", 0);insertChildren($$, $2, $3, new Node("$", 0));
+	add_to_table($3->key, "struct");}
 	|		VarStruct COMMA IDdec
-	{insertChildren($$, $3, new Node("$", 0));}
+	{insertChildren($$, $3, new Node("$", 0));
+	add_to_table($3->key, "struct");}
 	|		VarStruct COMMA AssignExprStruct
 	{insertChildren($$, $3, new Node("$", 0));}
 	;
  /* 结构体的赋值语句*/
 AssignExprStruct:	IDdec ASSIGN LBRACE AssignExprStructInner RBRACE
-	{$$=new Node("AssignExprStruct ", 0);insertChildren($$, $1, $4,  new Node("$", 0));}
+	{$$=new Node("AssignExprStruct ", 0);insertChildren($$, $1, $4,  new Node("$", 0));
+	add_to_table($1->key, "struct");}
 	;
  /* 结构体的赋值语句花括号内部的内容*/
-AssignExprStructInner:	DOT IDdec ASSIGN Const
+AssignExprStructInner:	DOT IDdec ASSIGN Opnum
 	{$$=new Node("AssignExprStructInner ", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
-	|	IDdec COLON Const
+	|	IDdec COLON Opnum
 	{$$=new Node("VarStructInner ", 0);insertChildren($$, $1, $3,  new Node("$", 0));}
-	|	AssignExprStructInner COMMA DOT IDdec ASSIGN Const
+	|	AssignExprStructInner COMMA DOT IDdec ASSIGN Opnum
 	{insertChildren($$, $4, $6,  new Node("$", 0));}
-	|	AssignExprStructInner COMMA IDdec COLON Const
+	|	AssignExprStructInner COMMA IDdec COLON Opnum
 	{insertChildren($$, $3, $5,  new Node("$", 0));}
 	;
-
+ /* 数组声明*/
+VarArray:	INT IDdec LMB Const RMB
+	{$$=new Node("VarArray Declaration ", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
+	|		VarArray COMMA IDdec LMB Const RMB
+	{insertChildren($$, $3, $5,  new Node("$", 0));}
+	;
 
  /* 声明或者表达式加上 ';'*/
 VarOpnum:	VarInt {$$=$1;}
@@ -341,11 +352,19 @@ Expr:		Opnum PLUS Opnum
 	|		LP Opnum RP %prec LOWEST
 	{$$=new Node("Expr,op: ()", 0);insertChildren($$,$2,new Node("$", 0));}
 	;
- /*操作数*/
+ /* 操作数*/
 Opnum:		Const	{$$=$1;}
 	|		IDdec	{$$=$1;}
 	|		Expr 	{$$=$1;}
+	|		Array	{$$=$1;}
 	;
+ /* 数组中的某个数*/
+Array:		IDdec LMB Const RMB 
+	{$$=new Node("Array num", 0);insertChildren($$, $1, $3, new Node("$", 0));}
+	|		IDdec LMB IDdec RMB
+	{$$=new Node("Array num", 0);insertChildren($$, $1, $3, new Node("$", 0));}
+	;
+
  /* 标识符声明 */
 IDdec:		ID		{$$=$1;$$->key = "ID declaration, " + $$->key;}
 	;

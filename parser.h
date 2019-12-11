@@ -1,6 +1,7 @@
-/*新建一个节点，并且将从下方传递来的节点加入其子结点*/
-	void print(Node* p, int interval)
-	{
+#include<map>
+#include<string>
+/*打印整个树的形状*/
+	void print(Node* p, int interval){
 		for(int i=0;i<interval;i++)
 		{
 			if(i<interval-2)
@@ -19,8 +20,8 @@
 			print(p->children[i], interval+1);
 		}
 	}
-	void insertChildren(Node*par, ...)
-	{
+/*新建一个节点，并且将从下方传递来的节点加入其子结点*/
+	void insertChildren(Node*par, ...){
 	    va_list list;
 	    va_start(list,par);
 	    Node *child;
@@ -57,8 +58,8 @@
 	     }
 	     va_end(list);
 	}
-	bool returnError(Node*p, Node*root, bool isInt)//有语法错误返回true
-	{
+/*处理返回语句的语法错误*/
+	bool returnError(Node*p, Node*root, bool isInt){
 		//如果这个节点不为空且为return、
 		if(p && p->key == "Return statement")
 		{
@@ -113,3 +114,19 @@
 		}
 		return res;
 	}
+
+/*符号表的定义*/
+class item{
+	public:
+		string type;
+};
+map<string, item> table;
+void add_to_table(string id, string type) {
+//默认值都存储为0
+	item it;
+	it.type = type;
+    table.insert(pair<string, item>(id, it));
+}
+item* getID(string id) {
+	return &table[id];
+}
