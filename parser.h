@@ -1,5 +1,4 @@
-#include<map>
-#include<string>
+
 /*打印整个树的形状*/
 	void print(Node* p, int interval){
 		for(int i=0;i<interval;i++)
@@ -114,19 +113,3 @@
 		}
 		return res;
 	}
-
-/*符号表的定义*/
-class item{
-	public:
-		string type;
-};
-map<string, item> table;
-void add_to_table(string id, string type) {
-//默认值都存储为0
-	item it;
-	it.type = type;
-    table.insert(pair<string, item>(id, it));
-}
-item* getID(string id) {
-	return &table[id];
-}
