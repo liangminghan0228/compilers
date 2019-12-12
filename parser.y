@@ -1,8 +1,11 @@
 %{
 	#include"tree.h"
 	#include"parser.h"
+	#include"table.h"
+	#include"threeaddress.h"
 	extern int yylex();
 	int yyerror(const char* msg);
+	Node* root;
 %}
 
 %union{
@@ -41,9 +44,9 @@
 %%
  /* 开始符号 */
 s:		BeforeMain MainFunc
-	{$$=new Node("Program", 0);insertChildren($$, $1, $2, new Node("$", 0));print($$, 2);}
+	{$$=new Node("Program", 0);insertChildren($$, $1, $2, new Node("$", 0));print($$, 2);root = $$;}
 	|	MainFunc
-	{$$=new Node("Program", 0);insertChildren($$, $1,  new Node("$", 0));print($$, 2);}
+	{$$=new Node("Program", 0);insertChildren($$, $1,  new Node("$", 0));print($$, 2);root = $$;}
  ;
 
  /* 主函数之前的声明*/
@@ -55,7 +58,8 @@ s:		BeforeMain MainFunc
 
   /* 主函数*/
 MainFunc: 	INT MAIN LP RP CompoundK
-	{returnError($5, $5, true);$$=new Node("MainFunc", 0);insertChildren($$, $1, $2, $5, new Node("$", 0));}
+	{returnError($5, $5, true);$$=new Node("MainFunc", 0);
+	insertChildren($$, $1, $2, $5, new Node("$", 0));}
 	|	INT MAIN RP CompoundK 
 	{returnError($4, $4, true);$$=new Node("MainFunc", 0);insertChildren($$, $1, $2, $4, new Node("$", 0));cout<<"need a '(' in line "<<$2->line<<endl;}
 	|	INT MAIN LP CompoundK 
@@ -75,12 +79,12 @@ MainFunc: 	INT MAIN LP RP CompoundK
 
  /* 大括号包起来的部分*/
 CompoundK:		LBRACE Content RBRACE {$$=$2;}
-	|			LBRACE RBRACE {$$=new Node("CompoundK statement", 0);}
+	|			LBRACE RBRACE {$$=new Node("CompoundK", 0);}
 	/* 缺右括号 */
 	|			LBRACE Content %prec LOWEST
 	{$$=$2;cout<<"need a '}' in line "<<$$->line<<endl;}
 	|			LBRACE %prec LOWEST
-	{$$=new Node("CompoundK statement", 0);cout<<"need a '}' in line "<<$$->line<<endl;}
+	{$$=new Node("CompoundK", 0);cout<<"need a '}' in line "<<$$->line<<endl;}
 	
 	;
 
@@ -92,52 +96,52 @@ CompoundK:		LBRACE Content RBRACE {$$=$2;}
 
   /* 结构体内部内容*/
 StructInnerVar:		INT IDdec 
-	{$$=new Node("StructInnerVar ", 0);insertChildren($$, $1, $2, new Node("$", 0));}
-	|							StructInnerVar COMMA IDdec
+	{$$=new Node("StructInnerVar", 0);insertChildren($$, $1, $2, new Node("$", 0));}
+	|				StructInnerVar COMMA IDdec
 	{insertChildren($$, $3, new Node("$", 0));}
 	;
 
 StructInner: 		StructInnerVar SEMICOLON
-	{$$=new Node("StructInner ", 0);insertChildren($$, $1,  new Node("$", 0));}
+	{$$=new Node("StructInner", 0);insertChildren($$, $1,  new Node("$", 0));}
 	|						StructInner StructInnerVar SEMICOLON
 	{insertChildren($$, $2, new Node("$", 0));}
 	;
 
  /* 大括号里包含的内容*/
 Content:		Conclude
-		{$$=new Node("CompoundK statement", 0);insertChildren($$,$1,new Node("$", 0));}
+		{$$=new Node("CompoundK", 0);insertChildren($$,$1,new Node("$", 0));}
 	|			Content Conclude
 		{insertChildren($$,$2,new Node("$", 0));}
 	;
  /* 大括号里包含的内容的具体归纳 */
-Conclude:		VarInt	SEMICOLON		{$$=$1;}
+Conclude:		VarInt	SEMICOLON			{$$=$1;}
 	|			VarStruct	SEMICOLON		{$$=$1;}
 	|			VarArray	SEMICOLON		{$$=$1;}
-	|			VarInt									{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
-	|			VarStruct							{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
-	|			Opnum SEMICOLON		{$$=$1;}
-	|			Opnum %prec LOWEST	{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
-	|			RepeatK								{$$=$1;}
-	|			Condition							{$$=$1;}
-	|			ReturnStmt						{$$=$1;}
-	|			Writek									{$$=$1;}
-	|			Readk									{$$=$1;}
+	|			VarInt						{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
+	|			VarStruct					{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
+	|			Opnum SEMICOLON				{$$ = $1;}
+	|			Opnum %prec LOWEST			{$$=$1;cout<<"need a ';' in line "<<$$->line<<endl;}
+	|			RepeatK						{$$=$1;}
+	|			Condition					{$$=$1;}
+	|			ReturnStmt					{$$=$1;}
+	|			Writek						{$$=$1;}
+	|			Readk						{$$=$1;}
 	;
  
  /* 输出的语句 */
 Writek:		PRINT OpnumNull SEMICOLON 
-	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
+	{$$=new Node("Writek", 0);insertChildren($$, $2, new Node("$", 0));
 	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;}
 	|			PRINT OpnumNull/*缺少分号*/
-	{$$=new Node("Writek statement", 0);insertChildren($$, $2, new Node("$", 0));
+	{$$=new Node("Writek", 0);insertChildren($$, $2, new Node("$", 0));
 	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;
 	cout<<"need a ';' in line "<<$2->line<<endl;}
 	;
 
 Readk:			SCANF IDdec SEMICOLON
-	{$$=new Node("Readk statement,", 0); insertChildren($$, $2, new Node("$", 0));}
+	{$$=new Node("Readk", 0); insertChildren($$, $2, new Node("$", 0));}
 	|			SCANF IDdec
-	{$$=new Node("Readk statement,", 0); insertChildren($$, $2, new Node("$", 0));
+	{$$=new Node("Readk", 0); insertChildren($$, $2, new Node("$", 0));
 	cout<<"need a ';' in line "<<$2->line<<endl;}
  /* 返回的语句 */
  ReturnStmt:	RETURN SEMICOLON
@@ -150,42 +154,42 @@ Readk:			SCANF IDdec SEMICOLON
 		{$$=$1;$$->key="Return expr statement";insertChildren($$, $2,new Node("$", 0));cout<<"need a ';' in line "<<$$->line<<endl;}
  /* 条件结构 */
 Condition:		IF LP Opnum RP CompoundK %prec LOWEST		
-	{$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$5,new Node("$", 0));}
+	{$$=new Node("Conditionif", 0);insertChildren($$,$3,$5,new Node("$", 0));}
 	|			IF LP Opnum RP CompoundK ELSE CompoundK		
-	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
 	|			IF LP Opnum RP CompoundK ELSE Condition		
-	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$3,$5,$7,new Node("$", 0));}
  	/* 缺左括号 */
 	|			IF Opnum RP CompoundK %prec LOWEST		
-	{$$=new Node("Condition statement,only if", 0);insertChildren($$,$2,$4,new Node("$", 0));
+	{$$=new Node("Conditionif", 0);insertChildren($$,$2,$4,new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;}
 	|			IF Opnum RP CompoundK ELSE CompoundK		
-	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;}
 	|			IF Opnum RP CompoundK ELSE Condition		
-	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$2,$4,$6,new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;}
 	/* 缺右括号 */
 	|			IF LP Opnum CompoundK %prec LOWEST		
-	{$$=new Node("Condition statement,only if", 0);insertChildren($$,$3,$4,new Node("$", 0));
+	{$$=new Node("Conditionif", 0);insertChildren($$,$3,$4,new Node("$", 0));
 	cout<<"need a ')' in line "<<$3->line<<endl;}
 	|			IF LP Opnum CompoundK ELSE CompoundK		
-	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
 	cout<<"need a ')' in line "<<$3->line<<endl;}
 	|			IF LP Opnum CompoundK ELSE Condition		
-	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$3,$4,$6,new Node("$", 0));
 	cout<<"need a ')' in line "<<$3->line<<endl;}
 	/* 缺两个括号 */
 	|			IF Opnum CompoundK %prec LOWEST		
-	{$$=new Node("Condition statement,only if", 0);insertChildren($$,$2,$3,new Node("$", 0));
+	{$$=new Node("Conditionif", 0);insertChildren($$,$2,$3,new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;
 	cout<<"need a ')' in line "<<$2->line<<endl;}
 	|			IF Opnum CompoundK ELSE CompoundK		
-	{$$=new Node("Condition statement,with else", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;
 	cout<<"need a ')' in line "<<$2->line<<endl;}
 	|			IF Opnum CompoundK ELSE Condition		
-	{$$=new Node("Condition statement,with else if", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
+	{$$=new Node("Conditionelse", 0);insertChildren($$,$2,$3,$5,new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;
 	cout<<"need a ')' in line "<<$2->line<<endl;}
 	;
@@ -193,36 +197,36 @@ Condition:		IF LP Opnum RP CompoundK %prec LOWEST
 
  /* 循环体结构 */
 RepeatK:		FOR LP ForHeader RP CompoundK
-	{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $5, new Node("$", 0));}
+	{$$=new Node("RepeatKFor", 0);insertChildren($$, $3, $5, new Node("$", 0));}
 	|			WHILE LP Opnum RP CompoundK
-	{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$5,new Node("$", 0));
+	{$$=new Node("RepeatKWhile", 0);insertChildren($$,$3,$5,new Node("$", 0));
 	if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;}
 	|			WHILE LP RP CompoundK
-	{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,new Node("NULL", 0),$4,new Node("$", 0));
+	{$$=new Node("RepeatKWhile ", 0);insertChildren($$,new Node("NULL", 0),$4,new Node("$", 0));
 	cout<<"need a expr in line "<<$2->line<<endl;}
 	/* 缺左括号 */
 	|			FOR ForHeader RP CompoundK
-	{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $2, $4, new Node("$", 0));
+	{$$=new Node("RepeatKFor ", 0);insertChildren($$, $2, $4, new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;}
 	|			WHILE OpnumNull RP CompoundK
-	{$$=new Node("RepeatK statement, while ", 0);insertChildren($$, $2, $4, new Node("$", 0));
+	{$$=new Node("RepeatKWhile", 0);insertChildren($$, $2, $4, new Node("$", 0));
 	if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<endl;
 	cout<<"need a '(' in line "<<$1->line<<endl;}
 	/* 缺右括号 */
 	|			FOR LP ForHeader CompoundK
-	{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $3, $4, new Node("$", 0));
+	{$$=new Node("RepeatKFor ", 0);insertChildren($$, $3, $4, new Node("$", 0));
 	cout<<"need a ')' in line "<<$3->line<<endl;}
 	|			WHILE LP OpnumNull CompoundK
-	{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$3,$4,new Node("$", 0));
+	{$$=new Node("RepeatKWhile", 0);insertChildren($$,$3,$4,new Node("$", 0));
 	if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;
 	cout<<"need a ')' in line "<<$2->line<<endl;}
 	/* 缺少两个括号 */
 	|			FOR ForHeader CompoundK
-	{$$=new Node("RepeatK statement, for ", 0);insertChildren($$, $2, $3, new Node("$", 0));
+	{$$=new Node("RepeatKFor", 0);insertChildren($$, $2, $3, new Node("$", 0));
 	cout<<"need a '(' in line "<<$1->line<<endl;
 	cout<<"need a ')' in line "<<$2->line<<endl;}
 	|			WHILE OpnumNull CompoundK
-	{$$=new Node("RepeatK statement, while ", 0);insertChildren($$,$2,$3,new Node("$", 0));
+	{$$=new Node("RepeatKWhile", 0);insertChildren($$,$2,$3,new Node("$", 0));
 	if($2->key == "NULL")cout<<"need a expr in line "<<$1->line<<endl;
 	cout<<"need a '(' in line "<<$1->line<<endl;
 	cout<<"need a ')' in line "<<$1->line<<endl;}
@@ -247,10 +251,9 @@ ForHeader:		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
 
  /* 声明变量 或者 声明变量并赋值 */
 VarInt:		INT AssignExprInt
-	{$$=new Node("VarInt Declaration ", 0);insertChildren($$, $1, $2, new Node("$", 0));}
+	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));}
 	|		INT IDdec
-	{$$=new Node("VarInt Declaration ", 0);insertChildren($$, $1, $2, new Node("$", 0));
-	add_to_table($2->key, "int");}
+	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));}
 	|		VarInt COMMA IDdec
 	{insertChildren($$, $3, new Node("$", 0));}
 	|		VarInt COMMA AssignExprInt
@@ -259,32 +262,28 @@ VarInt:		INT AssignExprInt
 	 
  /* 定义一个变量 */
 AssignExprInt:		IDdec ASSIGN Opnum 
-	{$$=new Node("ASSIGN Expr,", 0); insertChildren($$, $1, $3, new Node("$", 0));
-	add_to_table($1->key, "int");}
+	{$$=new Node("AssignExprInt", 0); insertChildren($$, $1, $3, new Node("$", 0));}
 	;
 
  /* 结构体相关的初始化*/
 VarStruct:		STRUCT IDdec AssignExprStruct
-	{$$=new Node("VarStruct Declaration ", 0);insertChildren($$, $2, $3, new Node("$", 0));}
+	{$$=new Node("VarStruct", 0);insertChildren($$, $2, $3, new Node("$", 0));}
 	|		STRUCT IDdec IDdec
-	{$$=new Node("VarStruct Declaration ", 0);insertChildren($$, $2, $3, new Node("$", 0));
-	add_to_table($3->key, "struct");}
+	{$$=new Node("VarStruct", 0);insertChildren($$, $2, $3, new Node("$", 0));}
 	|		VarStruct COMMA IDdec
-	{insertChildren($$, $3, new Node("$", 0));
-	add_to_table($3->key, "struct");}
+	{insertChildren($$, $3, new Node("$", 0));}
 	|		VarStruct COMMA AssignExprStruct
 	{insertChildren($$, $3, new Node("$", 0));}
 	;
  /* 结构体的赋值语句*/
 AssignExprStruct:	IDdec ASSIGN LBRACE AssignExprStructInner RBRACE
-	{$$=new Node("AssignExprStruct ", 0);insertChildren($$, $1, $4,  new Node("$", 0));
-	add_to_table($1->key, "struct");}
+	{$$=new Node("AssignExprStruct", 0);insertChildren($$, $1, $4,  new Node("$", 0));}
 	;
  /* 结构体的赋值语句花括号内部的内容*/
 AssignExprStructInner:	DOT IDdec ASSIGN Opnum
-	{$$=new Node("AssignExprStructInner ", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
+	{$$=new Node("AssignExprStructInner", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
 	|	IDdec COLON Opnum
-	{$$=new Node("VarStructInner ", 0);insertChildren($$, $1, $3,  new Node("$", 0));}
+	{$$=new Node("VarStructInner", 0);insertChildren($$, $1, $3,  new Node("$", 0));}
 	|	AssignExprStructInner COMMA DOT IDdec ASSIGN Opnum
 	{insertChildren($$, $4, $6,  new Node("$", 0));}
 	|	AssignExprStructInner COMMA IDdec COLON Opnum
@@ -292,7 +291,7 @@ AssignExprStructInner:	DOT IDdec ASSIGN Opnum
 	;
  /* 数组声明*/
 VarArray:	INT IDdec LMB Const RMB
-	{$$=new Node("VarArray Declaration ", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
+	{$$=new Node("VarArray", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
 	|		VarArray COMMA IDdec LMB Const RMB
 	{insertChildren($$, $3, $5,  new Node("$", 0));}
 	;
@@ -310,66 +309,68 @@ OpnumNull:		Opnum %prec LOWEST {$$=$1;}
 
  /* 表达式*/
 Expr:		Opnum PLUS Opnum	
-	{$$=new Node("Expr,op: +", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr+", 0);insertChildren($$,$1,$3,new Node("$", 0));
+	}
 	|		Opnum MINUS Opnum		
-	{$$=new Node("Expr,op: -", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr-", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum MULTIPLY Opnum		
-	{$$=new Node("Expr,op: *", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr*", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum DIVIDE Opnum		
-	{$$=new Node("Expr,op: /", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr/", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum MODEL Opnum		
-	{$$=new Node("Expr,op: %", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr%", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum POW Opnum		
-	{$$=new Node("Expr,op: ^", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr^", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum GREATER Opnum		
-	{$$=new Node("Expr,op: >", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr>", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum GREATEREQ Opnum		
-	{$$=new Node("Expr,op: >=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr>=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum LESS Opnum		
-	{$$=new Node("Expr,op: <", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr<", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum LESSEQ Opnum		
-	{$$=new Node("Expr,op: <=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr<=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum NEQUAL Opnum		
-	{$$=new Node("Expr,op: !=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr!=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum EQUAL Opnum		
-	{$$=new Node("Expr,op: ==", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr==", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum ASSIGN Opnum		
-	{$$=new Node("Expr,op: =", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr=", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum AND Opnum		
-	{$$=new Node("Expr,op: &&", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr&&", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum OR Opnum		
-	{$$=new Node("Expr,op: ||", 0);insertChildren($$,$1,$3,new Node("$", 0));}
+	{$$=new Node("Expr||", 0);insertChildren($$,$1,$3,new Node("$", 0));}
 	|		Opnum SELFPLUS
-	{$$=$2;$$->key="Expr,op: i++";insertChildren($$,$1,new Node("$", 0));}
+	{$$=$2;$$->key="Expri++";insertChildren($$,$1,new Node("$", 0));}
 	|		Opnum SELFMINUS
-	{$$=$2;$$->key="Expr,op: i--";insertChildren($$,$1,new Node("$", 0));}
+	{$$=$2;$$->key="Expri--";insertChildren($$,$1,new Node("$", 0));}
 	|		SELFPLUS Opnum		
-	{$$=new Node("Expr,op: ++i", 0);insertChildren($$,$2,new Node("$", 0));}
+	{$$=new Node("Expr++i", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		SELFMINUS Opnum		
-	{$$=new Node("Expr,op: --i", 0);insertChildren($$,$2,new Node("$", 0));}
+	{$$=new Node("Expr--i", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		NOT Opnum		
-	{$$=new Node("Expr,op: !", 0);insertChildren($$,$2,new Node("$", 0));}
+	{$$=new Node("Expr!", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		LP Opnum RP %prec LOWEST
-	{$$=new Node("Expr,op: ()", 0);insertChildren($$,$2,new Node("$", 0));}
+	{$$=new Node("Expr()", 0);insertChildren($$,$2,new Node("$", 0));}
 	;
  /* 操作数*/
-Opnum:		Const	{$$=$1;}
-	|		IDdec	{$$=$1;}
-	|		Expr 	{$$=$1;}
-	|		Array	{$$=$1;}
+Opnum:		Const	{$$=$1;$$->isexpr = true;}
+	|		IDdec	{$$=$1;$$->isexpr = true;}
+	|		Expr 	{$$=$1;$$->isexpr = true;}
+	|		Array	{$$=$1;$$->isexpr = true;}
 	;
  /* 数组中的某个数*/
 Array:		IDdec LMB Const RMB 
-	{$$=new Node("Array num", 0);insertChildren($$, $1, $3, new Node("$", 0));}
+	{$$=new Node("Array", 0);insertChildren($$, $1, $3, new Node("$", 0));}
 	|		IDdec LMB IDdec RMB
-	{$$=new Node("Array num", 0);insertChildren($$, $1, $3, new Node("$", 0));}
+	{$$=new Node("Array", 0);insertChildren($$, $1, $3, new Node("$", 0));}
 	;
 
  /* 标识符声明 */
-IDdec:		ID		{$$=$1;$$->key = "ID declaration, " + $$->key;}
+IDdec:		ID
+	{$$=$1;}
 	;
  /*常量*/
-Const:		NUMBER		{$$=$1;$$->key = "Const declaration, " + $$->key;}
+Const:		NUMBER		{$$=$1;}
 	;
 
 
@@ -386,6 +387,8 @@ int main()
 	// string path = "";
 	// cin>>path;
 	// yyin=fopen(path.c_str(), "r");
-	yyin=fopen("test/1.c", "r");
+	yyin=fopen("test/2.c", "r");
 	yyparse();
+	gen_code(root);
+	print_code();
 }
