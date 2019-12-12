@@ -350,7 +350,7 @@ Expr:		Opnum PLUS Opnum
 	|		NOT Opnum		
 	{$$=new Node("Expr!", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		LP Opnum RP %prec LOWEST
-	{$$=new Node("Expr()", 0);insertChildren($$,$2,new Node("$", 0));}
+	{$$=$2;}
 	;
  /* 操作数*/
 Opnum:		Const	{$$=$1;$$->isexpr = true;}

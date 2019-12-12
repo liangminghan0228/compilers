@@ -54,44 +54,69 @@ void gen_code_Expr_two(Node* p, string op) {
     item->arg2 = p->children[1];
     code_list.push_back(item);
 }
+
+//一元运算表达式
+void gen_code_Expr_one(Node* p, string op) {
+    code_item* item = new code_item();
+    item->op = op;
+    item->res = p;
+    p->key = newtemp();
+    p->istemp = true;
+    item->arg1 = p->children[0];
+    code_list.push_back(item);
+}
 void gen_code(Node* p) {
     vector<Node*> tree = p->children;
     // cout<<p->key<<" "<<p->isexpr<<endl;
     string key = p->key;
-    if(key == "VarInt") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
-        }
-    }
-    else if(key == "AssignExprInt") {
+    if(key == "AssignExprInt") {
         gen_code_AssignExprInt(p);
         for(int i=0; i<tree.size(); i++) {
             gen_code(tree[i]);
         }
     }
     else if(key == "RepeatKFor") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
-        }
+        gen_code(tree[0]->children[0]);
+        int begin = code_list.size();
+        
+        gen_code(tree[0]->children[1]);
+        code_item* true_place = new code_item();
+        true_place->op = "!=";
+        true_place->arg1 = tree[0]->children[1];
+        true_place->arg2 = new Node("zero", 0);
+        true_place->goto_pos = code_list.size() + 2;
+        code_list.push_back(true_place);
+
+        code_item* false_place = new code_item();
+        code_list.push_back(false_place);
+
+        gen_code(tree[1]);
+        gen_code(tree[0]->children[2]);
+
+        code_item* goto_begin = new code_item();
+        code_list.push_back(goto_begin);
+        goto_begin->goto_pos = begin;
+        false_place->goto_pos = code_list.size();
     }
     else if(key == "Conditionif") {
         gen_code(tree[0]);
-        code_item* item1 = new code_item();//跳转到条件为真的执行语句
-        item1->op = "==";
-        item1->arg1 = p->children[0];
-        item1->arg2 = new Node("zero", 0);
-        item1->goto_pos = code_list.size() + 2;
-        code_list.push_back(item1);
-        code_item* item2 = new code_item();//跳转到if语句末尾
-        code_list.push_back(item2);
+        code_item* true_place = new code_item();
+        true_place->op = "!=";
+        true_place->arg1 = tree[0];
+        true_place->arg2 = new Node("zero", 0);
+        true_place->goto_pos = code_list.size() + 2;
+        code_list.push_back(true_place);
+
+        code_item* false_place = new code_item();
+        code_list.push_back(false_place);
         gen_code(tree[1]);
-        item2->goto_pos = code_list.size();
+        false_place->goto_pos = code_list.size();
     }
     else if(key == "Conditionelse") {
         gen_code(tree[0]);
         code_item* true_place = new code_item();
-        true_place->op = "==";
-        true_place->arg1 = p->children[0];
+        true_place->op = "!=";
+        true_place->arg1 = tree[0];
         true_place->arg2 = new Node("zero", 0);
         true_place->goto_pos = code_list.size() + 2;
         code_list.push_back(true_place);
@@ -106,20 +131,25 @@ void gen_code(Node* p) {
         gen_code(tree[2]);
         next->goto_pos = code_list.size();
     }
-    else if(key == "Conditionelseif") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
-        }
-    }
-    else if(key == "ForHeader") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
-        }
-    }
     else if(key == "RepeatKWhile") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
-        }
+        int begin = code_list.size();
+        gen_code(tree[0]);
+        code_item* true_place = new code_item();
+        true_place->op = "!=";
+        true_place->arg1 = tree[0];
+        true_place->arg2 = new Node("zero", 0);
+        true_place->goto_pos = code_list.size() + 2;
+        code_list.push_back(true_place);
+
+        code_item* false_place = new code_item();
+        code_list.push_back(false_place);
+
+        gen_code(tree[1]);
+        code_item* goto_begin = new code_item();
+        code_list.push_back(goto_begin);
+        goto_begin->goto_pos = begin;
+        false_place->goto_pos = code_list.size();
+
     }
     else if(key == "Expr+") { 
         for(int i=0; i<tree.size(); i++) {
@@ -162,6 +192,52 @@ void gen_code(Node* p) {
             gen_code(tree[i]);
         }
         gen_code_Expr_two(p, "||");
+    }
+    else if(key == "Expr^") {
+        for(int i=0; i<tree.size(); i++) {
+            gen_code(tree[i]);
+        }
+        gen_code_Expr_two(p, "^");
+    }
+    else if(key == "Expr>") {
+        for(int i=0; i<tree.size(); i++) {
+            gen_code(tree[i]);
+        }
+        gen_code_Expr_two(p, ">");
+    }
+    else if(key == "Expr>=") {
+        for(int i=0; i<tree.size(); i++) {
+            gen_code(tree[i]);
+        }
+        gen_code_Expr_two(p, ">=");
+    }
+    else if(key == "Expr<") {
+        for(int i=0; i<tree.size(); i++) {
+            gen_code(tree[i]);
+        }
+        gen_code_Expr_two(p, "<");
+    }
+    else if(key == "Expr<=") {
+        for(int i=0; i<tree.size(); i++) {
+            gen_code(tree[i]);
+        }
+        gen_code_Expr_two(p, "<=");
+    }
+    else if(key == "Expr!=") {
+        for(int i=0; i<tree.size(); i++) {
+            gen_code(tree[i]);
+        }
+        gen_code_Expr_two(p, "!=");
+    }
+    else if(key == "Expr==") {
+        for(int i=0; i<tree.size(); i++) {
+            gen_code(tree[i]);
+        }
+        gen_code_Expr_two(p, "==");
+    }
+    else if(key == "Expr!") {
+        gen_code(tree[0]);
+        gen_code_Expr_one(p, "!");
     }
     else {
         for(int i=0; i<tree.size(); i++) {
