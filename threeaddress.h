@@ -276,6 +276,20 @@ void gen_code(Node* p) {
         item->arg2 = p->children[0];
         code_list.push_back(item);
     }
+    else if(key == "Writek") {
+        gen_code(tree[0]);
+        code_item* item = new code_item();
+        item->op = "print";
+        item->arg1 = tree[0];
+        code_list.push_back(item);
+    }
+    else if(key == "Readk") {
+        gen_code(tree[0]);
+        code_item* item = new code_item();
+        item->op = "scanf";
+        item->arg1 = tree[0];
+        code_list.push_back(item);
+    }
     else {
         for(int i=0; i<tree.size(); i++) {
             gen_code(tree[i]);
