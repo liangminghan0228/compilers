@@ -3,6 +3,7 @@
 	#include"parser.h"
 	#include"table.h"
 	#include"threeaddress.h"
+	#include"toasm.h"
 	extern int yylex();
 	int yyerror(const char* msg);
 	Node* root;
@@ -253,16 +254,17 @@ ForHeader:		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
 VarInt:		INT AssignExprInt
 	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));}
 	|		INT IDdec
-	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));}
+	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));add_to_table($2->key, "INT");}
 	|		VarInt COMMA IDdec
-	{insertChildren($$, $3, new Node("$", 0));}
+	{insertChildren($$, $3, new Node("$", 0));add_to_table($3->key, "INT");}
 	|		VarInt COMMA AssignExprInt
 	{insertChildren($$, $3, new Node("$", 0));}
 	;
 	 
  /* 定义一个变量 */
 AssignExprInt:		IDdec ASSIGN Opnum 
-	{$$=new Node("AssignExprInt", 0); insertChildren($$, $1, $3, new Node("$", 0));}
+	{$$=new Node("AssignExprInt", 0); insertChildren($$, $1, $3, new Node("$", 0));
+	add_to_table($1->key, "INT");}
 	;
 
  /* 结构体相关的初始化*/
@@ -387,8 +389,9 @@ int main()
 	// string path = "";
 	// cin>>path;
 	// yyin=fopen(path.c_str(), "r");
-	yyin=fopen("test/2.c", "r");
+	yyin=fopen("test/1.c", "r");
 	yyparse();
 	gen_code(root);
 	print_code();
+	write_to_asm();
 }
