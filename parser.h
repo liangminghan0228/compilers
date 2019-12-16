@@ -13,7 +13,7 @@
 			}
 			
 		}
-		cout<<p->key<<endl;
+		cout<<p->key<<"  "<<p->type<<endl;
 		for(int i=0;i<p->children.size();i++)
 		{
 			print(p->children[i], interval+1);
