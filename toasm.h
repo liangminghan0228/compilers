@@ -14,9 +14,13 @@ void write_to_asm() {
     file<<"\tscanf_format db \"%d\", 0"<<endl;
 
     file<<endl<<"section .bss"<<endl;
-    //声明变量
+    //声明用户声明的变量
+    for(int i=0; i<table_list.size(); i++) {
+        file<<"\t"<<table_list[i]<<":times 4 resb 4"<<endl;
+    }
+    //声明临时变量
     for(int i=0; i<code_list.size(); i++) {
-        if(code_list[i]->res) {
+        if(code_list[i]->res && code_list[i]->res->istemp) {
             file<<"\t"<<code_list[i]->res->key<<":times 4 resb 4"<<endl;
         }
     }
