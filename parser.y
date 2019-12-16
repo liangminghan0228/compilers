@@ -42,7 +42,7 @@
 %nonassoc LBRACE
 %nonassoc ELSE //解决else相关的冲突
 %nonassoc SEMICOLON //解决去掉分号后的表达式归约移进相关的冲突
-
+%right MINUSNUMBER //解决负数相关的问题
 %%
  /* 开始符号 */
 s:		BeforeMain MainFunc
@@ -140,11 +140,15 @@ Conclude:		VarInt	SEMICOLON			{$$=$1;}
  /* 输出的语句 */
 Writek:		PRINT OpnumNull SEMICOLON 
 	{$$=new Node("Writek", 0);insertChildren($$, $2, new Node("$", 0));
-	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;parse_error = true;}
+	if($2->key == "NULL")
+	{cout<<"need a expr in line "<<$2->line<<endl;parse_error = true;}
+	}
 	|			PRINT OpnumNull/*缺少分号*/
 	{$$=new Node("Writek", 0);insertChildren($$, $2, new Node("$", 0));
-	if($2->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;
-	cout<<"need a ';' in line "<<$2->line<<endl;parse_error = true;}
+	if($2->key == "NULL")
+	cout<<"need a expr in line "<<$2->line<<endl;
+	cout<<"need a ';' in line "<<$2->line<<endl;\
+	parse_error = true;}
 	;
 
 Readk:			SCANF IDdec SEMICOLON
@@ -487,8 +491,8 @@ IDdec:		ID
 	}}
 	;
  /*常量*/
-Const:		NUMBER		{$$=$1;
-$$->type = "int";}
+Const:		NUMBER		{$$=$1;$$->type = "int";}
+	|		MINUS NUMBER %prec MINUSNUMBER		{$$=$2;$$->type = "int";$$->key = "-"+$$->key;}
 	;
 
 
@@ -505,7 +509,7 @@ int main()
 	// string path = "";
 	// cin>>path;
 	// yyin=fopen(path.c_str(), "r");
-	yyin=fopen("test/1.c", "r");
+	yyin=fopen("test/2.c", "r");
 	yyparse();
 	if(!parse_error)
 	{

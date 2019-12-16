@@ -37,12 +37,12 @@ void write_to_asm() {
         string arg1 = "", arg2 = "";
         if(code_list[i]->arg1)
         {
-            arg1 = (code_list[i]->arg1->key[0]>='0' && code_list[i]->arg1->key[0]<='9')? code_list[i]->arg1->key:
+            arg1 = ((code_list[i]->arg1->key[0]>='0' && code_list[i]->arg1->key[0]<='9') || (code_list[i]->arg1->key[0] == '-'))? code_list[i]->arg1->key:
             "dword [" + code_list[i]->arg1->key + "]";
         }
         if(code_list[i]->arg2)
         {
-            arg2 = (code_list[i]->arg2->key[0]>='0' && code_list[i]->arg2->key[0]<='9')? code_list[i]->arg2->key:
+            arg2 = ((code_list[i]->arg2->key[0]>='0' && code_list[i]->arg2->key[0]<='9') || (code_list[i]->arg2->key[0] == '-'))? code_list[i]->arg2->key:
             "dword [" + code_list[i]->arg2->key + "]";
         }
         //有操作运算的且没有跳转指令
