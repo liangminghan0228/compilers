@@ -15,8 +15,8 @@
 }
 %token<node> NUMBER
 %token<node> ID
-%token<node> RETURN SELFPLUS SELFMINUS LP RP PRINT IF FOR WHILE MAIN COMMA  INT VOID DOT COLON
-%token<node> PLUS MINUS MULTIPLY DIVIDE POW MODEL
+%token<node> RETURN SELFPLUS SELFMINUS LP RP PRINT IF FOR WHILE MAIN COMMA VOID DOT COLON
+%token<node> PLUS MINUS MULTIPLY DIVIDE POW MODEL POINT ADDR TYPE
 %token<node> ELSE SCANF ASSIGN STRUCT
 %token<node> LBRACE RBRACE LMB RMB SEMICOLON ERROR
 %token<node> GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ AND OR
@@ -33,8 +33,8 @@
 %left PLUS MINUS
 %left MULTIPLY DIVIDE MODEL
 %right POW
-%nonassoc RETURN PRINT SCANF IF FOR WHILE INT RBRACE STRUCT
-%right SELFPLUS SELFMINUS NOT
+%nonassoc RETURN PRINT SCANF IF FOR WHILE RBRACE STRUCT TYPE
+%right SELFPLUS SELFMINUS NOT ADDR POINT
 
 %left LP RP
 %nonassoc ID NUMBER //当读到return时用来先移进number和id后归约return
@@ -58,14 +58,14 @@ s:		BeforeMain MainFunc
 	;
 
   /* 主函数*/
-MainFunc: 	INT MAIN LP RP CompoundK
+MainFunc: 	TYPE MAIN LP RP CompoundK
 	{returnError($5, $5, true);$$=new Node("MainFunc", 0);
 	insertChildren($$, $1, $2, $5, new Node("$", 0));}
-	|	INT MAIN RP CompoundK 
+	|	TYPE MAIN RP CompoundK 
 	{returnError($4, $4, true);$$=new Node("MainFunc", 0);insertChildren($$, $1, $2, $4, new Node("$", 0));cout<<"need a '(' in line "<<$2->line<<endl;}
-	|	INT MAIN LP CompoundK 
+	|	TYPE MAIN LP CompoundK 
 	{returnError($4, $4, true);$$=new Node("MainFunc", 0);insertChildren($$, $1, $2, $4, new Node("$", 0));cout<<"need a ')' in line "<<$3->line<<endl;}
-	|	INT MAIN CompoundK 
+	|	TYPE MAIN CompoundK 
 	{returnError($3, $3, true);$$=new Node("MainFunc", 0);insertChildren($$, $1, $2, $3, new Node("$", 0));cout<<"need a '(' and a ')' in line "<<$2->line<<endl;}
 	|	VOID MAIN LP RP CompoundK 
 	{returnError($5, $5, true);$$=new Node("MainFunc", 0);insertChildren($$, $1, $2, $5, new Node("$", 0));returnError($$, $$, false);}
@@ -96,7 +96,7 @@ CompoundK:		LBRACE Content RBRACE {$$=$2;}
  ;
 
   /* 结构体内部内容*/
-StructInnerVar:		INT IDdec 
+StructInnerVar:		TYPE IDdec 
 	{$$=new Node("StructInnerVar", 0);insertChildren($$, $1, $2, new Node("$", 0));}
 	|				StructInnerVar COMMA IDdec
 	{insertChildren($$, $3, new Node("$", 0));}
@@ -251,20 +251,31 @@ ForHeader:		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
 
 
  /* 声明变量 或者 声明变量并赋值 */
-VarInt:		INT AssignExprInt
-	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));}
-	|		INT IDdec
-	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));add_to_table($2->key, "INT");}
+VarInt:		TYPE AssignExprInt
+	{cout<<"varintpp"<<endl;
+		$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));
+	$2->children[0]->type = $1->key;
+	add_to_table($2->children[0]->key, $2->children[0]->type);
+	}
+	|		TYPE IDdec
+	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));
+	$2->type = $1->key;
+	$$->type = $1->type;
+	add_to_table($2->key, $$->type);}
 	|		VarInt COMMA IDdec
-	{insertChildren($$, $3, new Node("$", 0));add_to_table($3->key, "INT");}
+	{insertChildren($$, $3, new Node("$", 0));
+	$3->type = $$->type;
+	add_to_table($3->key, $$->key);}
 	|		VarInt COMMA AssignExprInt
-	{insertChildren($$, $3, new Node("$", 0));}
+	{insertChildren($$, $3, new Node("$", 0));
+	$3->children[0]->type = $$->type;
+	add_to_table($3->children[0]->key, $3->children[0]->type);}
 	;
 	 
  /* 定义一个变量 */
 AssignExprInt:		IDdec ASSIGN Opnum 
-	{$$=new Node("AssignExprInt", 0); insertChildren($$, $1, $3, new Node("$", 0));
-	add_to_table($1->key, "INT");}
+	{cout<<"varintqq"<<endl;
+		$$=new Node("AssignExprInt", 0); insertChildren($$, $1, $3, new Node("$", 0));}
 	;
 
  /* 结构体相关的初始化*/
@@ -292,7 +303,7 @@ AssignExprStructInner:	DOT IDdec ASSIGN Opnum
 	{insertChildren($$, $3, $5,  new Node("$", 0));}
 	;
  /* 数组声明*/
-VarArray:	INT IDdec LMB Const RMB
+VarArray:	TYPE IDdec LMB Const RMB
 	{$$=new Node("VarArray", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
 	|		VarArray COMMA IDdec LMB Const RMB
 	{insertChildren($$, $3, $5,  new Node("$", 0));}
@@ -351,6 +362,10 @@ Expr:		Opnum PLUS Opnum
 	{$$=new Node("Expr--i", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		NOT Opnum		
 	{$$=new Node("Expr!", 0);insertChildren($$,$2,new Node("$", 0));}
+	|		ADDR Opnum		
+	{$$=new Node("Expr&", 0);insertChildren($$,$2,new Node("$", 0));}
+	|		POINT Opnum		
+	{$$=new Node("Expr~", 0);insertChildren($$,$2,new Node("$", 0));}
 	|		LP Opnum RP %prec LOWEST
 	{$$=$2;}
 	;
@@ -367,12 +382,13 @@ Array:		IDdec LMB Const RMB
 	{$$=new Node("Array", 0);insertChildren($$, $1, $3, new Node("$", 0));}
 	;
 
+
  /* 标识符声明 */
 IDdec:		ID
-	{$$=$1;}
+	{$$=$1;cout<<"pqpq"<<$1->key<<endl;}
 	;
  /*常量*/
-Const:		NUMBER		{$$=$1;}
+Const:		NUMBER		{$$=$1;cout<<$1->key<<endl;}
 	;
 
 

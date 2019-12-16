@@ -248,6 +248,14 @@ void gen_code(Node* p) {
         gen_code(tree[0]);
         gen_code_Expr_one(p, "!");
     }
+    else if(key == "Expr~") {
+        gen_code(tree[0]);
+        gen_code_Expr_one(p, "~");
+    }
+    else if(key == "Expr&") {
+        gen_code(tree[0]);
+        gen_code_Expr_one(p, "&");
+    }
     else if(key == "Expri++") {
         gen_code(tree[0]);
         gen_code_Expr_one(p, "++");
