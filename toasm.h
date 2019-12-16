@@ -230,6 +230,19 @@ void write_to_asm() {
                 file<<label2<<":"<<endl;
             }
 
+            else if(code_list[i]->op == "&") {
+                file<<"\t;取某个变量的地址"<<endl;
+                file<<"\tmov eax, "<<code_list[i]->arg1->key<<endl;
+                file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
+            }
+
+            else if(code_list[i]->op == "~") {
+                file<<"\t;取某个地址的变量"<<endl;
+                file<<"\tmov eax, "<<arg1<<endl;
+                file<<"\tmov ebx, [eax]"<<endl;
+                file<<"\tmov dword ["<<code_list[i]->res->key<<"], ebx"<<endl;
+            }
+
             else if(code_list[i]->op == "=") {
                 file<<"\t;赋值"<<endl;
                 file<<"\tmov eax, "<<arg1<<endl;

@@ -4,6 +4,16 @@
     extern YYSTYPE yylval;
     int line = 1;
     int col = 0;
+    //去空格
+    string remove_ws(char* str, int len) {
+        string res = "int";
+        for(int i = 3; i < len; i++) {
+            if(str[i] != ' ' && str[i] != '\t') {
+                res += "*";
+            }
+        }
+        return res;
+    }
 %}
 
 WS                  [\t ]+
@@ -12,6 +22,7 @@ letter              [A-Za-z_]
 NUMBER              [1-9]{number}*|0
 ID                  {letter}({letter}|{number})*
 ERROR               {number}+{letter}+
+TYPE             int({WS}|\*)*
 
 %s                  DCOMMENTS
 %s                  SCOMMENTS
@@ -43,12 +54,16 @@ ERROR               {number}+{letter}+
 <INITIAL>"."                 {col += yyleng;yylval.node = new Node("", 0, line, col);return DOT;}
 <INITIAL>":"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return COLON;}
 <INITIAL>"&&"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return AND;}
+<INITIAL>"&"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return ADDR;}
+<INITIAL>"~"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return POINT;}
+
 <INITIAL>"||"                 {col += yyleng;yylval.node = new Node("", 0, line, col);return OR;}
 
 <INITIAL>"return"            {col += yyleng;yylval.node = new Node("", 0, line, col);return RETURN;}
 <INITIAL>"main"              {col += yyleng;yylval.node = new Node("MAIN", 0, line, col);return MAIN;}
 <INITIAL>"void"              {col += yyleng;yylval.node = new Node("VOID", 0, line, col);return VOID;}
-<INITIAL>"int"               {col += yyleng;yylval.node = new Node("INT", 0, line, col);return INT;}
+
+<INITIAL>{TYPE}           {col += yyleng;yylval.node = new Node(remove_ws(yytext, yyleng), 0, line, col);return TYPE;}
 <INITIAL>"if"                {col += yyleng;yylval.node = new Node("", 0, line, col);return IF;}
 <INITIAL>"else"              {col += yyleng;yylval.node = new Node("", 0, line, col);return ELSE;}
 <INITIAL>"while"             {col += yyleng;yylval.node = new Node("", 0, line, col);return WHILE;}
