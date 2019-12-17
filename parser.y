@@ -224,7 +224,11 @@ RepeatK:		FOR LP ForHeader RP CompoundK
 	{$$=new Node("RepeatKFor", 0);insertChildren($$, $3, $5, new Node("$", 0));}
 	|			WHILE LP Opnum RP CompoundK
 	{$$=new Node("RepeatKWhile", 0);insertChildren($$,$3,$5,new Node("$", 0));
-	if($3->key == "NULL")cout<<"need a expr in line "<<$2->line<<endl;parse_error = true;}
+	if($3->key == "NULL")
+	{
+		cout<<"need a expr in line "<<$2->line<<endl;
+		parse_error = true;
+	}}
 	|			WHILE LP RP CompoundK
 	{$$=new Node("RepeatKWhile ", 0);insertChildren($$,new Node("NULL", 0),$4,new Node("$", 0));
 	cout<<"need a expr in line "<<$2->line<<endl;parse_error = true;}
@@ -276,8 +280,9 @@ ForHeader:		VarOpnum SEMICOLON OpnumNull SEMICOLON OpnumNull /* 不缺分号 */
  /* 声明变量 或者 声明变量并赋值 */
 VarInt:		TYPE AssignExprInt
 	{
-		$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));
+	$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));
 	$2->children[0]->type = $1->key;
+	$$->type = $1->key;
 	add_to_table($2->children[0]->key, $2->children[0]->type);
 	if($2->children[0]->type != $2->children[1]->type) {
 		cout<<"type error about "<<$2->children[0]->type<<" and "<<$2->children[1]->type<<" at line "<<$2->children[0]->line<<endl;parse_error = true;
@@ -286,7 +291,7 @@ VarInt:		TYPE AssignExprInt
 	|		TYPE IDdec
 	{$$=new Node("VarInt", 0);insertChildren($$, $1, $2, new Node("$", 0));
 	$2->type = $1->key;
-	$$->type = $1->type;
+	$$->type = $1->key;
 	add_to_table($2->key, $$->type);}
 	|		VarInt COMMA IDdec
 	{insertChildren($$, $3, new Node("$", 0));
@@ -486,6 +491,7 @@ Array:		IDdec LMB Const RMB
  /* 标识符声明 */
 IDdec:		ID
 	{$$=$1;
+	$$->key = "__" + $$->key;
 	if(lookup($$->key) != 0) {
 		$$->type = table[$$->key];
 	}}
@@ -506,15 +512,18 @@ int yyerror(const char* msg)
 int main()
 {
 	extern FILE* yyin;
-	// string path = "";
-	// cin>>path;
-	// yyin=fopen(path.c_str(), "r");
-	yyin=fopen("test/2.c", "r");
+	string path = "";
+	cin>>path;
+	yyin=fopen(path.c_str(), "r");
+	// yyin=fopen("test/2.c", "r");
 	yyparse();
 	if(!parse_error)
 	{
 		gen_code(root);
 		print_code();
 		write_to_asm();
+	}
+	else {
+		cout<<"parse_error"<<endl;
 	}
 }

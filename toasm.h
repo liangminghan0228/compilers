@@ -87,6 +87,22 @@ void write_to_asm() {
                 file<<"\tmov dword ["<<code_list[i]->res->key<<"], edx"<<endl<<endl;
             }
 
+            else if(code_list[i]->op == "^") {
+                file<<"\t;指数"<<endl;
+                file<<"\tmov eax, 0"<<endl;
+                file<<"\tmov ebx, 1"<<endl;
+                file<<"\t"<<label<<"_0:"<<endl;
+                file<<"\tcmp eax, "<<arg2<<endl;
+                file<<"\tjl "<<label<<"_1"<<endl;
+                file<<"\tjmp "<<label<<"_2"<<endl;
+                file<<"\t"<<label<<"_1:"<<endl;
+                file<<"\timul ebx, "<<arg1<<endl;
+                file<<"\tadd eax, 1"<<endl;
+                file<<"\tjmp "<<label<<"_0"<<endl;
+                file<<"\t"<<label<<"_2:"<<endl;
+                file<<"\tmov dword ["<<code_list[i]->res->key<<"], ebx"<<endl<<endl;
+            }
+
             else if(code_list[i]->op == "++") {
             
                 if(code_list[i]->arg1) {//i++
@@ -299,4 +315,3 @@ void write_to_asm() {
     file<<endl<<"\tpush 0"<<endl;
     file<<"\tcall exit"<<endl;
 }
-
