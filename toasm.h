@@ -109,15 +109,13 @@ void write_to_asm() {
                     file<<"\t;i++"<<endl;
                     file<<"\tmov eax, "<<arg1<<endl;
                     file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tinc eax"<<endl;
-                    file<<"\tmov "<<arg1<<", eax"<<endl;
+                    file<<"\tinc "<<arg1<<endl;
                 }
                 else {//++i
                     file<<"\t;++i"<<endl;
+                    file<<"\tinc "<<arg2<<endl;
                     file<<"\tmov eax, "<<arg2<<endl;
-                    file<<"\tinc eax"<<endl;
                     file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tmov "<<arg2<<", eax"<<endl;
                 }
             }
 
@@ -126,15 +124,13 @@ void write_to_asm() {
                     file<<"\t;i--"<<endl;
                     file<<"\tmov eax, "<<arg1<<endl;
                     file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tsub eax, 1"<<endl;
-                    file<<"\tmov "<<arg1<<", eax"<<endl;
+                    file<<"\tdec "<<arg1<<endl;
                 }
                 else {//--i
                     file<<"\t;--i"<<endl;
+                    file<<"\tdec "<<arg2<<endl;
                     file<<"\tmov eax, "<<arg2<<endl;
-                    file<<"\tsub eax, 1"<<endl;
                     file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tmov "<<arg2<<", eax"<<endl;
                 }
             }
 
