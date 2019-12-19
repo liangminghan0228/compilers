@@ -13,15 +13,39 @@ void write_to_asm() {
     file<<"\tprint_format db \"%d\", 0ah, 0dh, 0"<<endl;
     file<<"\tscanf_format db \"%d\", 0"<<endl;
 
-    file<<endl<<"section .bss"<<endl;
-    //声明用户声明的变量
+    //声明用户声明的初始化的变量,只包含数组
     for(int i=0; i<table_list.size(); i++) {
-        file<<"\t"<<table_list[i]<<":times 4 resb 4"<<endl;
+        table_node* node = table[table_list[i]];
+        if(node->length > 0) {
+            if(node->real_length > 0)
+            {
+                file<<"\t"<<table_list[i]<<"_ dd ";
+                for(int j=0;j<node->real_length;j++) {
+                    file<<node->array[j]<<", ";
+                }
+                for(int j=node->real_length;j<node->length;j++) {
+                    file<<"0, ";
+                }
+                file<<"0"<<endl;
+            }
+            file<<"\t"<<table_list[i]<<" dd "<<table_list[i]<<"_, 0";
+        }
+    }
+
+    file<<endl<<"section .bss"<<endl;
+    //声明用户声明的未初始化的变量
+    for(int i=0; i<table_list.size(); i++) {
+        if(table[table_list[i]]->length == 0 || table[table_list[i]]->real_length == 0) {
+            if(table[table_list[i]]->length > 0 && table[table_list[i]]->real_length == 0) {
+                file<<"\t"<<table_list[i]<<"_: resd "<<table[table_list[i]]->length<<endl;
+            }
+            file<<"\t"<<table_list[i]<<": resd 1"<<endl;
+        }
     }
     //声明临时变量
     for(int i=0; i<code_list.size(); i++) {
         if(code_list[i]->res && code_list[i]->res->istemp) {
-            file<<"\t"<<code_list[i]->res->key<<":times 4 resb 4"<<endl;
+            file<<"\t"<<code_list[i]->res->key<<": resd 1"<<endl;
         }
     }
     //代码段
@@ -34,30 +58,50 @@ void write_to_asm() {
         string num = string(buffer);
         string label = "label" + num;
         file<<label<<":"<<endl;
-        string arg1 = "", arg2 = "";
+        string arg1 = "", arg2 = "", res = "";
         if(code_list[i]->arg1)
         {
-            arg1 = ((code_list[i]->arg1->key[0]>='0' && code_list[i]->arg1->key[0]<='9') || (code_list[i]->arg1->key[0] == '-'))? code_list[i]->arg1->key:
-            "dword [" + code_list[i]->arg1->key + "]";
+            if(((code_list[i]->arg1->key[0]>='0' && code_list[i]->arg1->key[0]<='9') || (code_list[i]->arg1->key[0] == '-'))) {
+                arg1 = code_list[i]->arg1->key;
+            }
+            else {
+                arg1 = "dword [" + code_list[i]->arg1->key + "]";
+            }
         }
         if(code_list[i]->arg2)
         {
-            arg2 = ((code_list[i]->arg2->key[0]>='0' && code_list[i]->arg2->key[0]<='9') || (code_list[i]->arg2->key[0] == '-'))? code_list[i]->arg2->key:
-            "dword [" + code_list[i]->arg2->key + "]";
+            if(((code_list[i]->arg2->key[0]>='0' && code_list[i]->arg2->key[0]<='9') || (code_list[i]->arg2->key[0] == '-'))) {
+                arg2 = code_list[i]->arg2->key;
+            }
+            else {
+                arg2 = "dword [" + code_list[i]->arg2->key + "]";
+            }
+        }
+        if(code_list[i]->res)
+        {
+            res = "dword [" + code_list[i]->res->key + "]";
         }
         //有操作运算的且没有跳转指令
         if(code_list[i]->op != "" && code_list[i]->goto_pos == -1) {
-            if(code_list[i]->op == "+") {
+            if((code_list[i]->op == "[]")) {
+                file<<"\t;取数组的某个元素"<<endl;
+                file<<"\tmov eax, "<<arg1<<endl;
+                file<<"\tmov ebx, "<<arg2<<endl;
+                file<<"\tmov ebx, [ eax + 4 * ebx]"<<endl;
+                file<<"\tmov "<<res<<", ebx"<<endl;
+                
+            }
+            else if(code_list[i]->op == "+") {
                 file<<"\t;加法"<<endl;
                 file<<"\tmov eax, "<<arg1<<endl;
                 file<<"\tadd eax, "<<arg2<<endl;
-                file<<"\tmov  dword ["<<code_list[i]->res->key<<"], eax"<<endl<<endl;
+                file<<"\tmov "<<res<<", eax"<<endl<<endl;
             }
             else if(code_list[i]->op == "-") {
                 file<<"\t;减法"<<endl;
                 file<<"\tmov eax, "<<arg1<<endl;
                 file<<"\tsub eax, "<<arg2<<endl;
-                file<<"\tmov  dword ["<<code_list[i]->res->key<<"], eax"<<endl<<endl;
+                file<<"\tmov  "<<res<<", eax"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "*") {
@@ -66,7 +110,7 @@ void write_to_asm() {
                 file<<"\tmov ebx, "<<arg2<<endl;
                 file<<"\txor  edx,edx"<<endl;
                 file<<"\timul ebx"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl<<endl;
+                file<<"\tmov "<<res<<", eax"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "/") {
@@ -75,7 +119,7 @@ void write_to_asm() {
                 file<<"\tmov ebx, "<<arg2<<endl;
                 file<<"\txor  edx,edx"<<endl;
                 file<<"\tidiv ebx"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl<<endl;
+                file<<"\tmov "<<res<<", eax"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "%") {
@@ -84,7 +128,7 @@ void write_to_asm() {
                 file<<"\tmov ebx, "<<arg2<<endl;
                 file<<"\txor  edx,edx"<<endl;
                 file<<"\tidiv ebx"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], edx"<<endl<<endl;
+                file<<"\tmov "<<res<<", edx"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "^") {
@@ -100,7 +144,7 @@ void write_to_asm() {
                 file<<"\tadd eax, 1"<<endl;
                 file<<"\tjmp "<<label<<"_0"<<endl;
                 file<<"\t"<<label<<"_2:"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], ebx"<<endl<<endl;
+                file<<"\tmov "<<res<<", ebx"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "++") {
@@ -108,16 +152,14 @@ void write_to_asm() {
                 if(code_list[i]->arg1) {//i++
                     file<<"\t;i++"<<endl;
                     file<<"\tmov eax, "<<arg1<<endl;
-                    file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tinc eax"<<endl;
-                    file<<"\tmov "<<arg1<<", eax"<<endl;
+                    file<<"\tmov "<<res<<", eax"<<endl;
+                    file<<"\tinc "<<arg1<<endl;
                 }
                 else {//++i
                     file<<"\t;++i"<<endl;
+                    file<<"\tinc "<<arg2<<endl;
                     file<<"\tmov eax, "<<arg2<<endl;
-                    file<<"\tinc eax"<<endl;
-                    file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tmov "<<arg2<<", eax"<<endl;
+                    file<<"\tmov "<<res<<", eax"<<endl;
                 }
             }
 
@@ -125,16 +167,14 @@ void write_to_asm() {
                 if(code_list[i]->arg1) {//i--
                     file<<"\t;i--"<<endl;
                     file<<"\tmov eax, "<<arg1<<endl;
-                    file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tsub eax, 1"<<endl;
-                    file<<"\tmov "<<arg1<<", eax"<<endl;
+                    file<<"\tmov "<<res<<", eax"<<endl;
+                    file<<"\tdec "<<arg1<<endl;
                 }
                 else {//--i
                     file<<"\t;--i"<<endl;
+                    file<<"\tdec "<<arg2<<endl;
                     file<<"\tmov eax, "<<arg2<<endl;
-                    file<<"\tsub eax, 1"<<endl;
-                    file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
-                    file<<"\tmov "<<arg2<<", eax"<<endl;
+                    file<<"\tmov "<<res<<", eax"<<endl;
                 }
             }
 
@@ -142,27 +182,27 @@ void write_to_asm() {
                 file<<"\t;and"<<endl;
                 file<<"\tmov eax, "<<arg1<<endl;
                 file<<"\tand eax, "<<arg2<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl<<endl;
+                file<<"\tmov "<<res<<", eax"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "||") {
                 file<<"\t;or"<<endl;
                 file<<"\tmov eax, "<<arg1<<endl;
                 file<<"\tor eax, "<<arg2<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl<<endl;
+                file<<"\tmov "<<res<<", eax"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "<") {
                 file<<"\t;小于"<<endl;
                 string label1 = label + "_1";
                 string label2 = label + "_2";
-	            file<<"\tmov dword ["<<code_list[i]->res->key<<"], 0"<<endl;
+	            file<<"\tmov "<<res<<", 0"<<endl;
 	            file<<"\tmov eax, "<<arg1<<endl;
 	            file<<"\tcmp eax, "<<arg2<<endl;
 	            file<<"\tjl "<<label1<<endl;
                 file<<"\tjmp "<<label2<<endl;
                 file<<label1<<":"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], 1"<<endl;
+                file<<"\tmov "<<res<<", 1"<<endl;
 	            file<<label2<<":"<<endl;
             }
 
@@ -170,13 +210,13 @@ void write_to_asm() {
                 file<<"\t;大于"<<endl;
                 string label1 = label + "_1";
                 string label2 = label + "_2";
-	            file<<"\tmov dword ["<<code_list[i]->res->key<<"], 0"<<endl;
+	            file<<"\tmov "<<res<<", 0"<<endl;
 	            file<<"\tmov eax, "<<arg1<<endl;
 	            file<<"\tcmp eax, "<<arg2<<endl;
 	            file<<"\tjg "<<label1<<endl;
                 file<<"\tjmp "<<label2<<endl;
                 file<<label1<<":"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], 1"<<endl;
+                file<<"\tmov "<<res<<", 1"<<endl;
 	            file<<label2<<":"<<endl;
             }
 
@@ -184,13 +224,13 @@ void write_to_asm() {
                 file<<"\t;大于等于"<<endl;
                 string label1 = label + "_1";
                 string label2 = label + "_2";
-	            file<<"\tmov dword ["<<code_list[i]->res->key<<"], 0"<<endl;
+	            file<<"\tmov "<<res<<", 0"<<endl;
 	            file<<"\tmov eax, "<<arg1<<endl;
 	            file<<"\tcmp eax, "<<arg2<<endl;
 	            file<<"\tjge "<<label1<<endl;
                 file<<"\tjmp "<<label2<<endl;
                 file<<label1<<":"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], 1"<<endl;
+                file<<"\tmov "<<res<<", 1"<<endl;
 	            file<<label2<<":"<<endl;
             }
 
@@ -198,13 +238,13 @@ void write_to_asm() {
                 file<<"\t;小于等于"<<endl;
                 string label1 = label + "_1";
                 string label2 = label + "_2";
-	            file<<"\tmov dword ["<<code_list[i]->res->key<<"], 0"<<endl;
+	            file<<"\tmov "<<res<<", 0"<<endl;
 	            file<<"\tmov eax, "<<arg1<<endl;
 	            file<<"\tcmp eax, "<<arg2<<endl;
 	            file<<"\tjle "<<label1<<endl;
                 file<<"\tjmp "<<label2<<endl;
                 file<<label1<<":"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], 1"<<endl;
+                file<<"\tmov "<<res<<", 1"<<endl;
 	            file<<label2<<":"<<endl;
             }
 
@@ -212,13 +252,13 @@ void write_to_asm() {
                 file<<"\t;等于"<<endl;
                 string label1 = label + "_1";
                 string label2 = label + "_2";
-	            file<<"\tmov dword ["<<code_list[i]->res->key<<"], 0"<<endl;
+	            file<<"\tmov "<<res<<", 0"<<endl;
 	            file<<"\tmov eax, "<<arg1<<endl;
 	            file<<"\tcmp eax, "<<arg2<<endl;
 	            file<<"\tje "<<label1<<endl;
                 file<<"\tjmp "<<label2<<endl;
                 file<<label1<<":"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], 1"<<endl;
+                file<<"\tmov "<<res<<", 1"<<endl;
 	            file<<label2<<":"<<endl;
             }
 
@@ -226,13 +266,13 @@ void write_to_asm() {
                 file<<"\t;不等于"<<endl;
                 string label1 = label + "_1";
                 string label2 = label + "_2";
-	            file<<"\tmov dword ["<<code_list[i]->res->key<<"], 0"<<endl;
+	            file<<"\tmov "<<res<<", 0"<<endl;
 	            file<<"\tmov eax, "<<arg1<<endl;
 	            file<<"\tcmp eax, "<<arg2<<endl;
 	            file<<"\tjne "<<label1<<endl;
                 file<<"\tjmp "<<label2<<endl;
                 file<<label1<<":"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], 1"<<endl;
+                file<<"\tmov "<<res<<", 1"<<endl;
 	            file<<label2<<":"<<endl;
             }
 
@@ -243,30 +283,30 @@ void write_to_asm() {
 	            file<<"\tmov eax, "<<arg1<<endl;
 	            file<<"\tcmp eax, 0"<<endl;
 	            file<<"\tje "<<label1<<endl;
-	            file<<"\tmov dword ["<<code_list[i]->res->key<<"], 0"<<endl;
+	            file<<"\tmov "<<res<<", 0"<<endl;
 	            file<<"\tjmp "<<label2<<endl;
                 file<<label1<<":"<<endl;
-	            file<<"mov dword ["<<code_list[i]->res->key<<"], 1"<<endl;
+	            file<<"mov "<<res<<", 1"<<endl;
                 file<<label2<<":"<<endl;
             }
 
             else if(code_list[i]->op == "&") {
                 file<<"\t;取某个变量的地址"<<endl;
                 file<<"\tmov eax, "<<code_list[i]->arg1->key<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl;
+                file<<"\tmov "<<res<<", eax"<<endl;
             }
 
             else if(code_list[i]->op == "~") {
                 file<<"\t;取某个地址的变量"<<endl;
                 file<<"\tmov eax, "<<arg1<<endl;
                 file<<"\tmov ebx, [eax]"<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], ebx"<<endl;
+                file<<"\tmov "<<res<<", ebx"<<endl;
             }
 
             else if(code_list[i]->op == "=") {
                 file<<"\t;赋值"<<endl;
                 file<<"\tmov eax, "<<arg1<<endl;
-                file<<"\tmov dword ["<<code_list[i]->res->key<<"], eax"<<endl<<endl;
+                file<<"\tmov "<<res<<", eax"<<endl<<endl;
             }
 
             else if(code_list[i]->op == "print") {

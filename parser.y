@@ -23,7 +23,7 @@
 %token<node> GREATER LESS NEQUAL EQUAL NOT GREATEREQ LESSEQ AND OR
 %type<node> CompoundK Content Conclude VarInt Expr AssignExprInt StructStmt StructInner StructInnerVar BeforeMain MainFunc
 %type<node> Opnum OpnumNull VarOpnum RepeatK Condition IDdec Const s ReturnStmt Writek ForHeader Readk
-%type<node> VarStruct AssignExprStruct AssignExprStructInner Array VarArray
+%type<node> VarStruct AssignExprStruct AssignExprStructInner Array VarArray AssignExprArray AssignExprArrayInner
 
 %nonassoc LOWEST //解决去掉一些东西后相关的冲突，额外定义的终结符
 %right ASSIGN
@@ -296,7 +296,7 @@ VarInt:		TYPE AssignExprInt
 	|		VarInt COMMA IDdec
 	{insertChildren($$, $3, new Node("$", 0));
 	$3->type = $$->type;
-	add_to_table($3->key, $$->key);}
+	add_to_table($3->key, $3->type);}
 	|		VarInt COMMA AssignExprInt
 	{insertChildren($$, $3, new Node("$", 0));
 	$3->children[0]->type = $$->type;
@@ -337,12 +337,40 @@ AssignExprStructInner:	DOT IDdec ASSIGN Opnum
 	{insertChildren($$, $3, $5,  new Node("$", 0));}
 	;
  /* 数组声明*/
-VarArray:	TYPE IDdec LMB Const RMB
-	{$$=new Node("VarArray", 0);insertChildren($$, $2, $4,  new Node("$", 0));}
-	|		VarArray COMMA IDdec LMB Const RMB
-	{insertChildren($$, $3, $5,  new Node("$", 0));}
+VarArray:	TYPE Array
+	{$$=new Node("VarArray", 0);insertChildren($$, $1, $2,  new Node("$", 0));
+	$2->children[0]->type = $1->key + "*";
+	add_to_table($2->children[0]->key, $2->children[0]->type);
+	$$->type = $2->children[0]->type;
+	$2->type = $1->key;}
+	|		VarArray COMMA Array
+	{insertChildren($$, $3,  new Node("$", 0));
+	$3->children[0]->type = $$->type;
+	add_to_table($3->children[0]->key, $3->children[0]->type);
+	$3->type = $1->key;}
+	|		TYPE AssignExprArray
+	{$$=new Node("VarArray", 0);insertChildren($$, $1, $2,  new Node("$", 0));
+	$2->children[0]->children[0]->type = $1->key + "*";
+	add_to_table($2->children[0]->children[0]->key, $2->children[0]->children[0]->type);
+	$$->type = $2->children[0]->type;
+	$2->children[0]->type = $1->key;}
+	|		VarArray COMMA AssignExprArray
+	{insertChildren($$, $3,  new Node("$", 0));
+	$3->children[0]->children[0]->type = $$->type;
+	add_to_table($3->children[0]->children[0]->key, $3->children[0]->children[0]->type);
+	$3->children[0]->type = $1->key;}
 	;
 
+ /* 数组初始化*/
+AssignExprArray:		Array ASSIGN LBRACE AssignExprArrayInner RBRACE
+	{$$=new Node("AssignExprArray", 0);insertChildren($$, $1, $4, new Node("$", 0));}
+	;
+ /* 数组初始化内部*/
+AssignExprArrayInner:	Const 
+	{$$=new Node("AssignExprArrayInner", 0);insertChildren($$, $1, new Node("$", 0));}
+	|					AssignExprArrayInner COMMA Const
+	{insertChildren($$, $3,  new Node("$", 0));}
+	;
  /* 声明或者表达式加上 ';'*/
 VarOpnum:	VarInt {$$=$1;}
 	|		OpnumNull {$$=$1;}   
@@ -358,70 +386,70 @@ OpnumNull:		Opnum %prec LOWEST {$$=$1;}
 Expr:		Opnum PLUS Opnum	
 	{$$=new Node("Expr+", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum MINUS Opnum		
 	{$$=new Node("Expr-", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum MULTIPLY Opnum		
 	{$$=new Node("Expr*", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum DIVIDE Opnum		
 	{$$=new Node("Expr/", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum MODEL Opnum		
 	{$$=new Node("Expr%", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum POW Opnum		
 	{$$=new Node("Expr^", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum GREATER Opnum		
 	{$$=new Node("Expr>", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum GREATEREQ Opnum		
 	{$$=new Node("Expr>=", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum LESS Opnum		
 	{$$=new Node("Expr<", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
 	|		Opnum LESSEQ Opnum		
 	{$$=new Node("Expr<=", 0);insertChildren($$,$1,$3,new Node("$", 0));
 	if($1->type != "int") 
-		{cout<<"type error "<<$1->key<<" type is not int"<<endl;parse_error = true;}
+		{cout<<"type error "<<$1->key<<" type is not int at line"<<$$->line<<endl;parse_error = true;}
 	if($1->type != $3->type)
 		{cout<<"type error about "<<$1->type<<" and "<<$3->type<<" at line "<<$1->line<<endl;parse_error = true;}
 	$$->type = $1->type;}
@@ -475,16 +503,15 @@ Expr:		Opnum PLUS Opnum
 	{$$=$2;}
 	;
  /* 操作数*/
-Opnum:		Const	{$$=$1;$$->isexpr = true;}
-	|		IDdec	{$$=$1;$$->isexpr = true;}
-	|		Expr 	{$$=$1;$$->isexpr = true;}
-	|		Array	{$$=$1;$$->isexpr = true;}
+Opnum:		Const	{$$=$1;}
+	|		IDdec	{$$=$1;}
+	|		Expr 	{$$=$1;}
+	|		Array	{$$=$1;}
 	;
  /* 数组中的某个数*/
-Array:		IDdec LMB Const RMB 
-	{$$=new Node("Array", 0);insertChildren($$, $1, $3, new Node("$", 0));}
-	|		IDdec LMB IDdec RMB
-	{$$=new Node("Array", 0);insertChildren($$, $1, $3, new Node("$", 0));}
+Array:		IDdec LMB Opnum RMB 
+	{$$=new Node("Array", 0);insertChildren($$, $1, $3, new Node("$", 0));
+	$$->type = pointer_minus($1);}
 	;
 
 
@@ -493,7 +520,7 @@ IDdec:		ID
 	{$$=$1;
 	$$->key = "__" + $$->key;
 	if(lookup($$->key) != 0) {
-		$$->type = table[$$->key];
+		$$->type = table[$$->key]->type;
 	}}
 	;
  /*常量*/
