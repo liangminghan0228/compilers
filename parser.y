@@ -520,7 +520,7 @@ IDdec:		ID
 	{$$=$1;
 	$$->key = "__" + $$->key;
 	if(lookup($$->key) != 0) {
-		$$->type = table[$$->key];
+		$$->type = table[$$->key]->type;
 	}}
 	;
  /*常量*/

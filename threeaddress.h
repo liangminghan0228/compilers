@@ -36,13 +36,25 @@ string newtemp() {
     sprintf(buffer, "%d", temp_count++);
     return "temp" + string(buffer);
 }
-//声明语句中的赋值表达式
+//声明语句中的int赋值表达式
 void gen_code_AssignExprInt(Node* p) {
     code_item* item = new code_item();
     item->op = "=";
     item->res = p->children[0];
     item->arg1 = p->children[1];
     code_list.push_back(item);
+}
+
+//声明语句中的array赋值表达式,将信息添加到符号表
+void gen_code_AssignExprArray(Node* p) {
+    table_node* node = table[p->children[0]->children[0]->key];
+    node->length = p->children[0]->children[1]->val;
+    int real_length = p->children[1]->children.size();
+    node->real_length = real_length;
+    node->array = new int[real_length];
+    for(int i=0;i<real_length;i++) {
+        node->array[i] = p->children[1]->children[i]->val;
+    }
 }
 //二元运算表达式
 void gen_code_Expr_two(Node* p, string op) {
@@ -66,6 +78,7 @@ void gen_code_Expr_one(Node* p, string op) {
     item->arg1 = p->children[0];
     code_list.push_back(item);
 }
+
 void gen_code(Node* p) {
     vector<Node*> tree = p->children;
     // cout<<p->key<<" "<<p->isexpr<<endl;
@@ -73,6 +86,23 @@ void gen_code(Node* p) {
     if(key == "AssignExprInt") { 
         gen_code(tree[1]);
         gen_code_AssignExprInt(p);
+    }
+    else if(key == "AssignExprArray")
+    {
+         gen_code_AssignExprArray(p);
+    }
+    
+    else if(key == "Array") {
+        //先计算tree[1]的值
+        gen_code(tree[1]);
+        p->key = newtemp();
+        code_item* item = new code_item();
+        item->op = "[]";
+        item->res = p;
+        item->arg1 = tree[0];
+        item->arg2 = tree[1];
+        p->istemp = true;
+        code_list.push_back(item);
     }
     else if(key == "RepeatKFor") {
         gen_code(tree[0]->children[0]);
@@ -235,6 +265,9 @@ void gen_code(Node* p) {
         gen_code_Expr_two(p, "==");
     }
      else if(key == "Expr=") {
+     if(tree[0]->key == "Array") {
+         gen_code(tree[0]);
+     }
      if(lookup(tree[0]->key))
      {
         gen_code(tree[1]);
@@ -304,13 +337,5 @@ void gen_code(Node* p) {
         }
     }
 }
-
-// void change_arg_name() {
-//     for(int i=0; i<code_list.size(); i++) {
-//         if(code_list[i]->arg1 && !(code_list[i]->arg1->key[0]>='0' && code_list[i]->arg1->key[0] <= '9')) {
-//             code_list[i]->arg1->key = "[" + code_list[i]->arg1->key +"]";
-//         }
-//     }
-// }
 
 
