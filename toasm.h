@@ -118,7 +118,7 @@ void write_to_asm() {
                 file<<"\tmov eax, "<<arg1<<endl;
                 file<<"\tmov ebx, "<<arg2<<endl;
                 file<<"\txor  edx,edx"<<endl;
-                file<<"\tidiv ebx"<<endl;
+                file<<"\tdiv ebx"<<endl;
                 file<<"\tmov "<<res<<", eax"<<endl<<endl;
             }
 
@@ -127,7 +127,7 @@ void write_to_asm() {
                 file<<"\tmov eax, "<<arg1<<endl;
                 file<<"\tmov ebx, "<<arg2<<endl;
                 file<<"\txor  edx,edx"<<endl;
-                file<<"\tidiv ebx"<<endl;
+                file<<"\tdiv ebx"<<endl;
                 file<<"\tmov "<<res<<", edx"<<endl<<endl;
             }
 

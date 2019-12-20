@@ -525,7 +525,7 @@ IDdec:		ID
 	;
  /*常量*/
 Const:		NUMBER		{$$=$1;$$->type = "int";}
-	|		MINUS NUMBER %prec MINUSNUMBER		{$$=$2;$$->type = "int";$$->key = "-"+$$->key;}
+	|		MINUS NUMBER %prec MINUSNUMBER		{$$=$2;$$->type = "int";$$->key = "-"+$$->key;$$->val = -$$->val;}
 	;
 
 
@@ -548,6 +548,8 @@ int main()
 	{
 		gen_code(root);
 		print_code();
+		cout<<endl<<endl;
+		// gen_p_blocks();
 		write_to_asm();
 	}
 	else {
