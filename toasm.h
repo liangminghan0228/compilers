@@ -28,7 +28,7 @@ void write_to_asm() {
                 }
                 file<<"0"<<endl;
             }
-            file<<"\t"<<table_list[i]<<" dd "<<table_list[i]<<"_, 0";
+            file<<"\t"<<table_list[i]<<" dd "<<table_list[i]<<"_, 0"<<endl;
         }
     }
 
@@ -39,7 +39,11 @@ void write_to_asm() {
             if(table[table_list[i]]->length > 0 && table[table_list[i]]->real_length == 0) {
                 file<<"\t"<<table_list[i]<<"_: resd "<<table[table_list[i]]->length<<endl;
             }
-            file<<"\t"<<table_list[i]<<": resd 1"<<endl;
+            else
+            {
+                file<<"\t"<<table_list[i]<<": resd 1"<<endl;
+            }
+            
         }
     }
     //声明临时变量

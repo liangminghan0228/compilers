@@ -107,6 +107,9 @@ void gen_code(Node* p) {
     
     else if(key == "Array") {
         //先计算tree[1]的值
+        if(is_const_num(tree[1])) {
+            table[tree[0]->key]->length = (table[tree[0]->key]->length == 0)?tree[1]->val:table[tree[0]->key]->length;
+        }
         gen_code(tree[1]);
         p->key = newtemp();
         code_item* item = new code_item();
