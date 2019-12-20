@@ -79,6 +79,19 @@ void gen_code_Expr_one(Node* p, string op) {
     code_list.push_back(item);
 }
 
+//判断一个结点是否为数字常量
+bool is_const_num(Node* p) {
+    if((p->key[0]>='0'&&p->key[0]<='9')||p->key[0]=='-') {
+        return true;
+    }
+    return false;
+}
+//将一个数字转化为字符串
+string num_to_string(int n) {
+    char buffer[10];
+    sprintf(buffer, "%d", n);
+    return string(buffer);
+}
 void gen_code(Node* p) {
     vector<Node*> tree = p->children;
     // cout<<p->key<<" "<<p->isexpr<<endl;
@@ -180,89 +193,244 @@ void gen_code(Node* p) {
         false_place->goto_pos = code_list.size();
 
     }
-    else if(key == "Expr+") { 
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+    else if(key == "Expr+") {
+        //如果是数字就直接计算产生的值
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = tree[0]->val + tree[1]->val;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "+");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = tree[0]->val + tree[1]->val;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "+");
+            }
+        }
     }
     else if(key == "Expr-") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = tree[0]->val - tree[1]->val;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "-");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = tree[0]->val - tree[1]->val;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "-");
+            }
+        }
     }
     else if(key == "Expr*") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = tree[0]->val * tree[1]->val;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "*");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = tree[0]->val * tree[1]->val;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "*");
+            }
+        }
     }
     else if(key == "Expr/") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = int(tree[0]->val / tree[1]->val);
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "/");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = int(tree[0]->val / tree[1]->val);
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "/");
+            }
+        }
     }
     else if(key == "Expr%") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = tree[0]->val % tree[1]->val;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "%");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = tree[0]->val % tree[1]->val;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "%");
+            }
+        }
     }
     else if(key == "Expr&&") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = tree[0]->val && tree[1]->val;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "&&");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = tree[0]->val && tree[1]->val;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "&&");
+            }
+        }
     }
     else if(key == "Expr||") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = tree[0]->val || tree[1]->val;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "||");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = tree[0]->val || tree[1]->val;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "||");
+            }
+        }
     }
     else if(key == "Expr^") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = (int)pow(tree[0]->val, tree[1]->val);
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "^");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = (int)pow(tree[0]->val, tree[1]->val);
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "^");
+            }
+        }
     }
     else if(key == "Expr>") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = (tree[0]->val > tree[1]->val)?1:0;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, ">");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = (tree[0]->val > tree[1]->val)?1:0;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, ">");
+            }
+        }
     }
     else if(key == "Expr>=") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = (tree[0]->val >= tree[1]->val)?1:0;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, ">=");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = (tree[0]->val >= tree[1]->val)?1:0;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, ">=");
+            }
+        }
     }
     else if(key == "Expr<") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = (tree[0]->val < tree[1]->val)?1:0;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "<");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = (tree[0]->val < tree[1]->val)?1:0;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "<");
+            }
+        }
     }
     else if(key == "Expr<=") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = (tree[0]->val <= tree[1]->val)?1:0;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "<=");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = (tree[0]->val <= tree[1]->val)?1:0;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "<=");
+            }
+        }
     }
     else if(key == "Expr!=") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = (tree[0]->val != tree[1]->val)?1:0;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "!=");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = (tree[0]->val != tree[1]->val)?1:0;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "!=");
+            }
+        }
     }
     else if(key == "Expr==") {
-        for(int i=0; i<tree.size(); i++) {
-            gen_code(tree[i]);
+        if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+            p->val = (tree[0]->val == tree[1]->val)?1:0;
+            p->key = num_to_string(p->val);
         }
-        gen_code_Expr_two(p, "==");
+        else {
+            gen_code(tree[0]);
+            gen_code(tree[1]);
+            if(is_const_num(tree[0])&&is_const_num(tree[1])) {
+                p->val = (tree[0]->val == tree[1]->val)?1:0;
+                p->key = num_to_string(p->val);
+            }
+            else {
+                gen_code_Expr_two(p, "==");
+            }
+        }
     }
      else if(key == "Expr=") {
      if(tree[0]->key == "Array") {
@@ -278,8 +446,14 @@ void gen_code(Node* p) {
      }
     }
     else if(key == "Expr!") {
-        gen_code(tree[0]);
-        gen_code_Expr_one(p, "!");
+        if(is_const_num(tree[0])) {
+            p->val = (tree[0]->val == 0)?1:0;
+            p->key = num_to_string(p->val);
+        }
+        else {
+            gen_code(tree[0]);
+            gen_code_Expr_one(p, "!");
+        }
     }
     else if(key == "Expr~") {
         gen_code(tree[0]);

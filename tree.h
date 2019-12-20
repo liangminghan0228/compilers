@@ -8,6 +8,7 @@
 #include<string.h>
 #include<map>
 #include <stdarg.h>
+#include<math.h>
 using namespace std;
 
 class Node
